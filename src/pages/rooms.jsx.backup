@@ -1,0 +1,63 @@
+// pages/rooms.js
+
+import React, { useState } from 'react';
+import Router from 'next/router';
+
+import Link from 'next/link'
+import Layout from '../components/layout'
+import { getCookie } from 'cookies-next';
+
+const Rooms = ({username}) => {
+  const [roomNumber, setRoomNumber] = useState('');
+
+  const handleJoinRoom = () => {
+    if (/^\d{5}$/.test(roomNumber)) {
+      Router.push(`/room/${roomNumber}`);
+    } else {
+      alert('Please enter a 5-digit room number');
+    }
+  };
+
+  return (
+    <Layout pageTitle="Choose a Room">
+{username ? 
+    <>
+      <div>
+      <h1>Choose a Room</h1>
+      <input
+        type="text"
+        value={roomNumber}
+        onChange={(e) => setRoomNumber(e.target.value)}
+        placeholder="Enter 5-digit room number"
+      />
+      <button onClick={handleJoinRoom}>Join Room</button>
+      <br />
+      <Link href="/api/logout">Logout</Link>
+    </div>
+    </> : 
+      <> <br />
+      <h1>กรุณาเข้าสู่ระบบก่อน</h1>
+      <br />
+            <Link href="/login">Login</Link><br/>
+            <Link href="/signup">Signup</Link>
+      </>
+    
+    }
+    </Layout>
+    
+    
+  );
+};
+
+export async function getServerSideProps(context) {
+  const req = context.req
+  const res = context.res
+  var username = getCookie('username', { req, res });
+  if (username == undefined){
+      username = false;
+  }
+  return { props: {username} };
+};
+
+
+export default Rooms;

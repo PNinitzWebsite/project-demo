@@ -1,0 +1,48 @@
+// pages/add-room.js
+
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+
+const AddRoom = () => {
+  const [roomNumber, setRoomNumber] = useState('');
+  const router = useRouter();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch('/api/add-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomNumber }),
+      });
+
+      if (response.ok) {
+        // Redirect to room list page or show success message
+        router.push('/');
+      } else {
+        // Handle error
+        console.error('Failed to add room');
+      }
+    } catch (error) {
+      console.error('Error adding room:', error);
+    }
+  };
+
+  return (
+    <div>
+      <h1>Add Room</h1>
+      <form onSubmit={handleSubmit}>
+        <label>
+          Room Number:
+          <input type="text" value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} />
+        </label>
+        <button type="submit">Add Room</button>
+      </form>
+    </div>
+  );
+};
+
+export default AddRoom;

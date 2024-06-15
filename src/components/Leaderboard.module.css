@@ -1,0 +1,80 @@
+/* components/Leaderboard.module.css */
+.link {
+    text-decoration: none;
+    color: black !important;
+}
+.link:hover {
+    text-decoration: none;
+    color: green !important;
+}
+
+.topLink {
+    text-decoration: none;
+    color: white !important;
+}
+.topLink:hover {
+    text-decoration: none;
+    color: black !important;
+}
+
+.container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: auto;
+    color: #fff; /* ตัวอักษรสีขาว */
+}
+
+.topThree {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.topBox {
+    background-color: #4caf50;
+    color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    width: 25%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.topBox h2 {
+    margin: 0;
+    font-size: 1.5em;
+    text-shadow: 1px 1px 2px #000; /* เงาของตัวอักษร */
+}
+
+.topBox p {
+    margin: 5px 0;
+    font-size: 1.2em;
+    text-shadow: 1px 1px 2px #000; /* เงาของตัวอักษร */
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff; /* พื้นหลังของตารางเป็นสีขาว */
+}
+
+.table th, .table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    color: #000; /* ตัวอักษรสีดำ */
+}
+
+.table th {
+    background-color: #f2f2f2;
+}
+
+.table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.table tr:hover {
+    background-color: #f1f1f1;
+}

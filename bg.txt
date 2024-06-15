@@ -1,0 +1,28 @@
+export const getGCPCredentials = () => {
+  // for Vercel, use environment variables
+  return process.env.GOOGLE_PRIVATE_KEY
+    ? {
+        credentials: {
+          client_email: process.env.GCLOUD_SERVICE_ACCOUNT_EMAIL,
+          private_key: process.env.GOOGLE_PRIVATE_KEY,
+        },
+        projectId: process.env.GCP_PROJECT_ID,
+      }
+      // for local development, use gcloud CLI
+    : {};
+};
+
+// example for Google Cloud Storage
+import { Storage } from '@google-cloud/storage';
+
+export const storageClient = new Storage(getGCPCredentials());
+
+const bucketName = 'my-bucket';
+const fileName = 'my-file.json';
+const file = storageClient.bucket(bucketName).file(fileName);
+
+await file.save(JSON.stringify({
+  foo: 'bar',
+}), {
+  contentType: 'application/json',
+});

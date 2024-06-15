@@ -1,0 +1,84 @@
+/* NicknameModal.module.css */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    color: black;
+  }
+  
+  .text-xl {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .currentNickname {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: #666;
+  }
+  
+  .input {
+    width: 100%;
+    padding: 8px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .errorMessage {
+    color: red;
+    font-size: 0.875rem;
+    margin: 1rem auto;
+  }
+  
+  .buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+  
+  .button {
+    padding: 8px 16px;
+    margin-left: 0.5rem;
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    background-color: #03a400;
+    color: white;
+  }
+  
+  .button:hover {
+    background-color: #00780a;
+  }
+  
+  .buttonred {
+    padding: 8px 16px;
+    margin-left: 0.5rem;
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    background-color: #c50000;
+    color: white;
+  }
+  
+  .buttonred:hover {
+    background-color: #780000;
+  }
