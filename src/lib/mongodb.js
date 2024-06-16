@@ -1,20 +1,19 @@
-import { MongoClient } from 'mongodb'
+import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI
-// const options = {
-//   useUnifiedTopology: true,
-//   useNewUrlParser: true,
-// }
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri, {
+ 
+});
 
-let client
-let clientPromise
-
-if (!process.env.MONGODB_URI) {
-  throw new Error('Add Mongo URI to env file')
+async function connect() {
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB');
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
+  }
 }
 
-client = new MongoClient(uri)
-clientPromise = client.connect()
+connect();
 
-
-export default clientPromise
+export default client;

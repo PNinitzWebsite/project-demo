@@ -1,0 +1,51 @@
+// pages/api/trigger-function.js
+
+import { JWT } from 'google-auth-library';
+import fetch from 'node-fetch';
+import serviceAccount from '../../../service-account.json'; // Adjust the path
+
+async function getAccessToken() {
+  const client = new JWT({
+    email: serviceAccount.client_email,
+    key: serviceAccount.private_key,
+    scopes: ['https://www.googleapis.com/oauth2/v4/token'],
+  });
+
+  const tokens = await client.authorize();
+  return tokens.access_token;
+}
+
+async function triggerCloudFunction() {
+  try {
+    const token = await getAccessToken();
+
+    const response = await fetch('https://us-central1-ptest-424306.cloudfunctions.net/function-1-test', {
+      method: 'POST', // or GET, PUT, DELETE depending on your function
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        'code':"P"
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error triggering function: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Function response:', data);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+export default async function handler(req, res) {
+  try {
+    await triggerCloudFunction();
+    res.status(200).json({ message: 'Function triggered successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}

@@ -35,35 +35,35 @@ const Room = ({ email }) => {
   };
 
   useEffect(() => {
-    if (id) {
-      fetch(`/api/room/${id}`)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error('Room not found');
-          }
-          return res.json();
-        })
-        .then((data) => {
-          setRoom(data.room);
-          if (email === data.room.userHost) {
-            setHost("host");
-            // console.log('Host', data.room.userHost);
-          }else {
-            // console.log('Client', email);
-            // console.log('test :',data.room.users);
-            const index = data.room.users.findIndex(user => user === email);
-            // console.log(`Index of ${email}`, index);
-            setProfileNumber(index + 1);
-          }
-        })
-        .catch((error) => {
-          console.error('Error fetching room:', error);
-          // Handle error, such as redirecting to room selection page
-        });
-    }
-
-
-  }, [id,email]);
+    const fetchRoomData = async () => {
+      try {
+        if (!id) return;
+  
+        const res = await fetch(`/api/room/${id}`);
+        if (!res.ok) {
+          throw new Error('Room not found');
+        }
+  
+        const data = await res.json();
+        const { room } = data;
+  
+        setRoom(room);
+  
+        if (email === room.userHost) {
+          setHost("host");
+        } else {
+          const index = room.users.findIndex(user => user === email);
+          setProfileNumber(index + 1);
+        }
+      } catch (error) {
+        console.error('Error fetching room:', error);
+        // Handle error, such as redirecting to room selection page
+      }
+    };
+  
+    fetchRoomData();
+  }, [id, email]);
+  
 
   const handleExit = () => {
     // Redirect to another page
@@ -141,8 +141,27 @@ const Room = ({ email }) => {
                   ></textarea>
                   <button className='mt-5 mb-5 block mx-auto hover:text-green-500' onClick={checkSyntax}>ตรวจสอบไวยากรณ์</button>
 
+                  {processing ? (
+                  <p>กรุณารอคำนวณสักครู่...</p>
+                ) : (
+                  result && (
+                    <div>
+                      <h2>ผลลัพธ์:</h2>
+                      {result.success ? (
+                        <p>{result.message}</p>
+                      ) : (
+                        <p className='text-red-500'>{result.error}</p>
+                      )}
+                      {result.compiledResult && (
+                        <p className='mt-2 text-green-500'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์: <br/> {result.compiledResult}</p>
+                      )}
+                    </div>
+                  )
+                )}
+                <br />
+
                   {/* เพิ่ม score */}
-                   <div className='text-xl mt-5 mb-10 hover:text-green-500'>
+                   <div className='text-xl mt-5 mb-5 hover:text-green-500'>
                     <form onSubmit={handleSubmit}>
                       <button type="submit">เพิ่ม Score</button>
                     </form>
@@ -174,23 +193,7 @@ const Room = ({ email }) => {
                 )}
                 
 
-                {processing ? (
-                  <p>กรุณารอคำนวณสักครู่...</p>
-                ) : (
-                  result && (
-                    <div>
-                      <h2>ผลลัพธ์:</h2>
-                      {result.success ? (
-                        <p>{result.message}</p>
-                      ) : (
-                        <p className='text-red-500'>{result.error}</p>
-                      )}
-                      {result.compiledResult && (
-                        <p className='mt-2 text-green-500'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์: <br/> {result.compiledResult}</p>
-                      )}
-                    </div>
-                  )
-                )}
+               
 
           <h1 className="text-3xl mt-10">มีใครบ้าง :</h1>
           <ul className='mt-3'><li className="text-red-500">{room.userHost} (HOST)</li></ul>

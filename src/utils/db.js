@@ -4,7 +4,7 @@ import { MongoClient } from 'mongodb';
 
 // Function to connect to MongoDB
 export async function connectToDatabase(uri) {
-  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+  const client = new MongoClient(uri, { });
   await client.connect();
   return client.db();
 }
