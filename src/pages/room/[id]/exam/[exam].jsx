@@ -283,7 +283,8 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
                                     <>
                                       {questions[parseInt(exam)-1].question === "" ? <h1 className=' text-red-300 text-xl'>ไม่มีคำโจทย์</h1> :
                                         <h1 className='mb-10 text-red-300 text-xl'>
-                                          <FontAwesomeIcon icon="fa-solid fa-circle-xmark" className='w-9 mr-2 inline-table' />
+                                          <br />
+                                          <FontAwesomeIcon icon="fa-solid fa-circle-xmark" className='w-8 mr-2 inline-table' />
                                           คำตอบไม่ถูกต้อง</h1>
                                       }
                                     </>)}
