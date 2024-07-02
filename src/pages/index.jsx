@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useMemo, useCallback } from 'react';
 import Router from 'next/router';
 import Link from 'next/link';
 import Layout from '../components/layout';
 import { getCookie } from 'cookies-next';
+import Loading from '../components/Loading';
+
 
 const Rooms = ({ email }) => {
   const [roomNumber, setRoomNumber] = useState('');
@@ -11,62 +13,55 @@ const Rooms = ({ email }) => {
   const [userHostRooms, setUserHostRooms] = useState([]);
   const [userClientRooms, setUserClientRooms] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [roomName, setRoomName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (isModalOpen) {
-      // Check if there are any existing rooms
-      if (userHostRoomsCount >= 0) {
-        // No existing rooms, set roomName to "ห้อง 1"
-        setRoomName(`ห้อง ${userHostRoomsCount + 1}`);
-      }
+
+  const roomName = useMemo(() => {
+    if (isModalOpen && userHostRoomsCount >= 0) {
+      return `ห้อง ${userHostRoomsCount + 1}`;
     }
+    return '';
   }, [isModalOpen, userHostRoomsCount]);
 
-  useEffect(() => {
-    async function fetchUserHostRooms() {
-      try {
-        const response = await fetch(`/api/get-rooms?userHost=${email}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserHostRooms(data.rooms);
-          setUserHostRoomsCount(data.count);
-        } else {
-          console.error('Failed to fetch user host rooms');
-        }
-      } catch (error) {
-        console.error('Error fetching user host rooms:', error);
-      }
-    }
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [responseHost, responseClient] = await Promise.all([
+        fetch(`/api/get-rooms?userHost=${email}`),
+        fetch(`/api/get-rooms?users=${email}`)
+      ]);
 
-    if (email) {
-      fetchUserHostRooms();
+      if (responseHost.ok && responseClient.ok) {
+        const [dataHost, dataClient] = await Promise.all([
+          responseHost.json(),
+          responseClient.json()
+        ]);
+
+        setUserHostRooms(dataHost.rooms);
+        setUserHostRoomsCount(dataHost.count);
+        setUserClientRooms(dataClient.clientRooms);
+        setUserRoomsCount(dataClient.clientRoomsCount);
+      } else {
+        console.error('Failed to fetch rooms');
+      }
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+    } finally {
+      setLoading(false);
     }
   }, [email]);
 
   useEffect(() => {
-    async function fetchUserRooms() {
-      try {
-        const response = await fetch(`/api/get-rooms?users=${email}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserClientRooms(data.clientRooms); // กำหนดข้อมูลห้องของผู้ใช้ที่เข้าร่วมห้อง
-          setUserRoomsCount(data.clientRoomsCount);
-        } else {
-          console.error('Failed to fetch user rooms');
-        }
-      } catch (error) {
-        console.error('Error fetching user rooms:', error);
-      }
-    }
-  
     if (email) {
-      fetchUserRooms();
+      fetchData();
+    } else {
+      setLoading(false);
     }
-  }, [email]);
-  
+  }, [email, fetchData]);
 
   const handleJoinRoom = async () => {
+    setError(null); // Reset error state
     if (/^\d{5}$/.test(roomNumber)) {
       try {
         const response = await fetch(`/api/join-room`, {
@@ -76,19 +71,22 @@ const Rooms = ({ email }) => {
           },
           body: JSON.stringify({ roomNumber, email }),
         });
+
+        const result = await response.json();
         if (response.ok) {
           Router.push(`/room/${roomNumber}`);
         } else {
-          console.error('Failed to join room');
+          setError(result.error); // Set error message
+          // console.error('Failed to join room');
         }
       } catch (error) {
         console.error('Error joining room:', error);
+        setError('Error joining room. Please try again.'); // Set generic error message
       }
     } else {
-      alert('Please enter a 5-digit room number');
+      setError('Please enter a 5-digit room number');
     }
   };
-  
 
   const handleAddRoom = async () => {
     setIsModalOpen(true);
@@ -99,21 +97,24 @@ const Rooms = ({ email }) => {
     setRoomName('');
   };
 
+  
+  
+
   const handleSubmitRoom = async () => {
     try {
       const newRoomNumber = generateRandomRoomNumber();
-  
+
       const response = await fetch('/api/add-room', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ roomNumber: newRoomNumber, userHost: email, roomName:roomName }),
+        body: JSON.stringify({ roomNumber: newRoomNumber, userHost: email, roomName: roomName,roomPass:roomPass }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
-        alert(`สร้างห้อง ${data.roomNumber} สำเร็จ | ชื่อห้อง : ${data.roomName}`);
+        alert(`สร้างห้อง ${data.roomNumber} สำเร็จ | ชื่อห้อง : ${data.roomName} | รหัสผ่าน : ${data.roomPass}`);
         Router.push(`/room/${data.roomNumber}`);
       } else {
         console.error('Failed to add room');
@@ -131,6 +132,12 @@ const Rooms = ({ email }) => {
 
   return (
     <Layout pageTitle="Rooms">
+      {loading ?(
+        <Loading/>
+      ):(
+        <>
+        </>
+      )}
       {email ? (
         <div className='mt-10'>
        
@@ -153,6 +160,9 @@ const Rooms = ({ email }) => {
           />
 
           <button onClick={handleJoinRoom}>เข้าร่วมห้อง</button>
+
+          {error && <p className="text-red-500">{error}</p>}
+
             </>
           ):(
             <>
@@ -220,7 +230,7 @@ const Rooms = ({ email }) => {
           {isModalOpen && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <div className="bg-white p-8 rounded-lg">
-                <h1 className="text-xl text-black font-bold mb-4">กรอกชื่อห้อง</h1>
+                <h1 className="text-lg text-black font-bold mb-4">กรอกชื่อห้อง</h1>
                 <input
   type="text"
   value={roomName}
@@ -243,6 +253,8 @@ const Rooms = ({ email }) => {
 />
 
 
+
+
                 <div className="flex justify-end">
                   <button className="mr-4 bg-gray-700 px-4 py-2 rounded hover:bg-red-800" onClick={handleCloseModal}>ยกเลิก</button>
                   <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={handleSubmitRoom}>สร้างห้อง</button>
@@ -263,6 +275,7 @@ const Rooms = ({ email }) => {
           
         </div>
       )}
+      
     </Layout>
   );
 };

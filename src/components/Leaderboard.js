@@ -14,6 +14,7 @@ const Leaderboard = ({ data }) => {
       score: score.score,
       name: score.name,
       roomNumber: item.roomNumber,
+      users: item.users, // Add users here
       profileNumber: score.profileNumber // Assume profileNumber is stored in MongoDB
     }));
     return acc.concat(scoresWithRoomInfo);

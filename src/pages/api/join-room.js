@@ -11,13 +11,18 @@ export default async function handler(req, res) {
       // ตรวจสอบว่าห้องนี้มีอยู่จริงหรือไม่
       const existingRoom = await db.collection("rooms").findOne({ roomNumber });
       if (!existingRoom) {
-        return res.status(404).json({ error: "Room not found" });
+        return res.status(300).json({ error: "Room not found" });
       }
 
       // ตรวจสอบว่าอีเมล์นี้เข้าร่วมห้องแล้วหรือยัง
       const userAlreadyJoined = existingRoom.users && existingRoom.users.includes(email);
       if (userAlreadyJoined) {
-        return res.status(400).json({ error: "User already joined this room" });
+        return res.status(300).json({ error: "User already joined this room" });
+      }
+
+      const hostAlreadyJoined = existingRoom.userHost == email;
+      if(hostAlreadyJoined){
+        return res.status(300).json({ error: "คุณเป็นหัวห้องอยู่แล้ว" });
       }
 
       // นับจำนวนผู้ใช้ที่มีในฟิลด์ 'users' ของห้องนี้

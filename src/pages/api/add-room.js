@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       existingRoom = await roomsCollection.findOne({ roomNumber: newRoomNumber,userHost: userHost,roomName:roomName });
     }
 
-    const insertedRoom = {roomNumber: newRoomNumber,userHost: userHost,roomName:roomName};
+    const insertedRoom = {roomNumber: newRoomNumber,userHost: userHost,roomName:roomName };
       
 
     const result = await roomsCollection.insertOne(insertedRoom);
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       roomNumber: insertedRoom.roomNumber,
       userHost: insertedRoom.userHost,
       roomName:insertedRoom.roomName,
-      users:[]
+      create: new Date().toUTCString()
     };
 
     return res.status(201).json(responseJson);

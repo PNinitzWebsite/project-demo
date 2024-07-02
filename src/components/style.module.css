@@ -4,3 +4,70 @@
 .yellowText {
     color: yellow;
 }
+.icon {
+  font-size: 12px;
+}
+
+/* Add this to your global CSS file or inside a <style> tag in your component */
+/* styles.css */
+.ReactModal__Overlay {
+  background-color: rgba(0, 0, 0, 0.75); /* สีพื้นหลังโปร่งแสง */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ReactModal__Content {
+  position: relative;
+  border: 2px solid green;
+  background: #000;
+  color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.modal-button:hover {
+  background-color: #0056b3;
+}
+
+.modal-button-close {
+  background-color: #6c757d;
+}
+
+.modal-button-close:hover {
+  background-color: #5a6268;
+}
+
