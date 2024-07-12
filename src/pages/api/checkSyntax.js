@@ -4,6 +4,7 @@ import { JWT } from 'google-auth-library';
 import fetch from 'node-fetch';
 import serviceAccount from '../../../service-account.json'; // Adjust the path if necessary
 
+
 // Function to get the access token
 async function getAccessToken() {
   const client = new JWT({
@@ -41,7 +42,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { code } = req.body;
 
-    if (!code) {
+    if (code == "") {
       return res.status(201).json({ success: false, error: 'กรุณากรอกโค้ด' });
     }
 

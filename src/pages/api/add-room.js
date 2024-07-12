@@ -15,6 +15,7 @@ export default async function handler(req, res) {
   const { roomNumber } = req.body;
   const userHost = req.body.userHost;
   const roomName = req.body.roomName;
+  const hostName = req.body.hostName;
 
   try {
     const db = await connectToDatabase(process.env.MONGODB_URI);
@@ -22,14 +23,14 @@ export default async function handler(req, res) {
 
     let newRoomNumber = roomNumber.toString();
 
-    let existingRoom = await roomsCollection.findOne({ roomNumber: newRoomNumber,userHost: userHost,roomName:roomName });
+    let existingRoom = await roomsCollection.findOne({ roomNumber: newRoomNumber,userHost: userHost,roomName:roomName,hostName:hostName });
 
     while (existingRoom) {
       newRoomNumber = generateRandomRoomNumber();
-      existingRoom = await roomsCollection.findOne({ roomNumber: newRoomNumber,userHost: userHost,roomName:roomName });
+      existingRoom = await roomsCollection.findOne({ roomNumber: newRoomNumber,userHost: userHost,roomName:roomName,hostName:hostName });
     }
 
-    const insertedRoom = {roomNumber: newRoomNumber,userHost: userHost,roomName:roomName };
+    const insertedRoom = {roomNumber: newRoomNumber,userHost: userHost,roomName:roomName ,hostName:hostName};
       
 
     const result = await roomsCollection.insertOne(insertedRoom);
@@ -39,6 +40,7 @@ export default async function handler(req, res) {
       roomNumber: insertedRoom.roomNumber,
       userHost: insertedRoom.userHost,
       roomName:insertedRoom.roomName,
+      hostName:insertedRoom.hostName,
       create: new Date().toUTCString()
     };
 

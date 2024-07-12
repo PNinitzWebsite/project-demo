@@ -27,6 +27,7 @@
     "isomorphic-ws": "^5.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.7.0",
+    "multiparty": "^4.2.3",
     "next": "14.2.3",
     "next-connect": "^1.0.0",
     "node": "^20.15.0",

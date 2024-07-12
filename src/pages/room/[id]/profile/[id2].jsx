@@ -5,7 +5,7 @@ import clientPromise from '../../../../lib/mongodb';
 import Link from 'next/link';
 import Layout from '@/components/layout'; // นำเข้า Layout
 
-const Profile = ({ user, email, roomNumber, users , host }) => {
+const Profile = ({ user, email, roomNumber, users, host, totalScore }) => {
   const router = useRouter();
   const { id, id2 } = router.query; // `id2` is the `profileNumber`
 
@@ -39,29 +39,28 @@ const Profile = ({ user, email, roomNumber, users , host }) => {
           <p><strong>Profile Number:</strong> {id2}</p>
           <p><strong>Email:</strong> {user.email}</p>
           <p><strong>Name:</strong> {user.name}</p>
-          <p><strong>Score:</strong> {user.score}</p>
+          <p><strong>Score:</strong> {totalScore}</p>
           {/* Add more user details as needed */}
         </>
       ) : (
         <>
-        {email ? (
-          <>
-        <br />
-          <h1 className='text-3xl mt-5'>ไม่อนุญาตให้ตรวจสอบข้อมูลในห้องอื่น ถ้ายังไม่ได้เข้าร่วมห้อง</h1>
-          <div className='text-xl mt-5'>
-            <Link href="/" >ย้อนกลับไป</Link>
-          </div>
-          </>
-        ):(
-        <>
-          <br />
-          <h1 className='text-3xl mt-5'>ยังไม่ได้เข้าสู่ระบบ</h1>
-          <div className='text-xl mt-5'>
-            <Link href="/" >ย้อนกลับไป</Link>
-          </div>
-        </>
-      )}
-          
+          {email ? (
+            <>
+              <br />
+              <h1 className='text-3xl mt-5'>ไม่อนุญาตให้ตรวจสอบข้อมูลในห้องอื่น ถ้ายังไม่ได้เข้าร่วมห้อง</h1>
+              <div className='text-xl mt-5'>
+                <Link href="/" >ย้อนกลับไป</Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <br />
+              <h1 className='text-3xl mt-5'>ยังไม่ได้เข้าสู่ระบบ</h1>
+              <div className='text-xl mt-5'>
+                <Link href="/" >ย้อนกลับไป</Link>
+              </div>
+            </>
+          )}
         </>
       )}
     </Layout>
@@ -96,13 +95,38 @@ export async function getServerSideProps(context) {
     };
   }
 
+  const answers = await db.collection("answers").findOne({ roomId: id });
+  if (!answers) {
+    return {
+      notFound: true,
+    };
+  }
+
+  // คำนวณ totalScore จากข้อมูลใน answers และ email
+  const scoreMap = Object.keys(answers).reduce((acc, key) => {
+    if (key !== '_id' && key !== 'roomId') { // กรองคีย์ที่ไม่ใช่คะแนน
+      Object.entries(answers[key]).forEach(([email, scoreInfo]) => {
+        // console.log("Processing email:", email, "scoreInfo:", scoreInfo);
+        if (typeof scoreInfo === 'object' && scoreInfo.score !== undefined) {
+          if (!acc[email]) acc[email] = 0;
+          acc[email] += scoreInfo.score;
+        }
+      });
+    }
+    return acc;
+  }, {});
+
+  const transformedEmail = user.email.replace(/\./g, '_'); // แปลง . เป็น _
+  const totalScore = scoreMap[transformedEmail] || 0;
+
   return {
     props: {
       user,
       email,
       roomNumber: id, // ส่ง roomNumber ไปด้วย
       users: room.users, // ส่ง users ไปด้วย
-      host:room.userHost,
+      host: room.userHost,
+      totalScore, // ส่ง totalScore ไปด้วย
     },
   };
 }

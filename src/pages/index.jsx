@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useMemo, useCallback } from 'react';
+import React, { useState, useEffect , useCallback } from 'react';
 import Router from 'next/router';
 import Link from 'next/link';
 import Layout from '../components/layout';
@@ -8,6 +8,7 @@ import Loading from '../components/Loading';
 
 const Rooms = ({ email }) => {
   const [roomNumber, setRoomNumber] = useState('');
+  const [hostName, setHostName] = useState('');
   const [userHostRoomsCount, setUserHostRoomsCount] = useState(0);
   const [userRoomsCount, setUserRoomsCount] = useState(0);
   const [userHostRooms, setUserHostRooms] = useState([]);
@@ -15,14 +16,17 @@ const Rooms = ({ email }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [roomName, setRoomName] = useState('');
 
-
-  const roomName = useMemo(() => {
+  useEffect(() => {
     if (isModalOpen && userHostRoomsCount >= 0) {
-      return `ห้อง ${userHostRoomsCount + 1}`;
+      setRoomName(`ห้อง ${userHostRoomsCount + 1}`);
+    } else {
+      setRoomName('');
     }
-    return '';
   }, [isModalOpen, userHostRoomsCount]);
+
+
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -94,7 +98,6 @@ const Rooms = ({ email }) => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setRoomName('');
   };
 
   
@@ -102,6 +105,10 @@ const Rooms = ({ email }) => {
 
   const handleSubmitRoom = async () => {
     try {
+      if(isModalOpen && hostName.length <= 0){
+        setHostName("Admin");
+      }
+      
       const newRoomNumber = generateRandomRoomNumber();
 
       const response = await fetch('/api/add-room', {
@@ -109,12 +116,12 @@ const Rooms = ({ email }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ roomNumber: newRoomNumber, userHost: email, roomName: roomName,roomPass:roomPass }),
+        body: JSON.stringify({ roomNumber: newRoomNumber, userHost: email, roomName: roomName, hostName:hostName }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        alert(`สร้างห้อง ${data.roomNumber} สำเร็จ | ชื่อห้อง : ${data.roomName} | รหัสผ่าน : ${data.roomPass}`);
+        alert(`สร้างห้อง ${data.roomNumber} สำเร็จ | ชื่อเล่น : ${data.hostName} | ชื่อห้อง : ${data.roomName}`);
         Router.push(`/room/${data.roomNumber}`);
       } else {
         console.error('Failed to add room');
@@ -230,6 +237,27 @@ const Rooms = ({ email }) => {
           {isModalOpen && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <div className="bg-white p-8 rounded-lg">
+              <h1 className="text-lg text-black font-bold mb-4">กรอกชื่อเล่น</h1>
+                <input required
+  type="text"
+  value={hostName}
+  onChange={(e) => {
+    const inputText = e.target.value;
+    if (inputText.length <= 20) {
+      setHostName(inputText);
+    } else {
+      alert('ชื่อเล่นต้องมีไม่เกิน 20 ตัวอักษร');
+    }
+  }}
+  onBlur={(e) => {
+    const inputText = e.target.value.trim();
+    if (inputText.length === 0) {
+      setHostName(`Admin`);
+    }
+  }}
+  className="border text-black bg-black border-gray-300 rounded px-4 py-2 w-full mb-4"
+  placeholder="ชื่อเล่น เช่น Admin"
+/>
                 <h1 className="text-lg text-black font-bold mb-4">กรอกชื่อห้อง</h1>
                 <input
   type="text"
@@ -251,8 +279,6 @@ const Rooms = ({ email }) => {
   className="border text-black bg-black border-gray-300 rounded px-4 py-2 w-full mb-4"
   placeholder="ชื่อห้อง เช่น ห้องที่ 1"
 />
-
-
 
 
                 <div className="flex justify-end">

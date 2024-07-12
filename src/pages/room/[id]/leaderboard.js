@@ -12,43 +12,34 @@ const LeaderboardPage = ( { email , users , host }) => {
   const router = useRouter();
   const { id } = router.query;
   const [data, setData] = useState([]);
+  const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true); // เพิ่ม state เพื่อเก็บสถานะการโหลด
 
   useEffect(() => {
-    if (!id) return;
-
     const fetchData = async () => {
-      const data = JSON.stringify({
-        "collection": "rooms",
-        "database": "test",
-        "dataSource": "Cluster0",
-        "filter": {
-          roomNumber: String(id)  // Ensure id is a string
-        }
-      });
-    
-      const config = {
-        method: 'post',
-        url: 'https://ap-southeast-1.aws.data.mongodb-api.com/app/data-lkmge/endpoint/data/v1/action/find',
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': process.env.API_KEY,
-          'Accept': 'application/json'
-        },
-        data: data
-      };
-    
+      if (!id) return;
+  
       try {
-        const response = await axios(config);
-        // console.log(JSON.stringify(response.data.documents));
-        setData(response.data.documents ? response.data.documents : []);
+        const res = await fetch(`/api/room/${id}`);
+        if (!res.ok) {
+          throw new Error('Room not found');
+        }
+  
+        const data1 = await res.json();
+        const { room,answer } = data1;
+
+        const roomData = room;
+        const scoresData = answer;
+  
+        setData(roomData || []);
+        setScores(scoresData || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
-        setLoading(false); // ตั้งค่า loading เป็น false เมื่อการประมวลผลเสร็จสิ้น
+        setLoading(false);
       }
     };
-    
+  
     fetchData();
   }, [id]);
 
@@ -64,7 +55,7 @@ const LeaderboardPage = ( { email , users , host }) => {
       {loading ? (
         <Loading /> // แสดงภาพการโหลดเมื่อกำลังดึงข้อมูล
       ) : (
-        <Leaderboard data={data} />
+        <Leaderboard data={data} scores={scores} />
       )}
       </>
      ):(

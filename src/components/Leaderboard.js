@@ -1,27 +1,70 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import styles from './Leaderboard.module.css';
 import { useRouter } from 'next/router';
 
-const Leaderboard = ({ data }) => {
+const Leaderboard = ({ data, scores }) => {
   const router = useRouter();
   const { id } = router.query;
 
-  // Flatten the scores
-  const flattenedData = data.reduce((acc, item) => {
-    const scoresWithRoomInfo = item.scores.map(score => ({
-      email: score.email,
-      score: score.score,
-      name: score.name,
-      roomNumber: item.roomNumber,
-      users: item.users, // Add users here
-      profileNumber: score.profileNumber // Assume profileNumber is stored in MongoDB
-    }));
-    return acc.concat(scoresWithRoomInfo);
-  }, []);
+  // console.log("data:", data);
+  // console.log("scores:", scores);
 
-  // Sort the flattened scores
-  const sortedData = flattenedData.sort((a, b) => b.score - a.score);
+  const sortedData = useMemo(() => {
+    // สร้าง map ของ scores จาก email
+    const scoreMap = Object.values(scores).reduce((acc, item) => {
+      if (typeof item === 'object' && !Array.isArray(item)) {
+        Object.entries(item).forEach(([email, scoreInfo]) => {
+          if (typeof scoreInfo === 'object' && scoreInfo.score !== undefined) {
+            if (!acc[email]) acc[email] = 0;
+            acc[email] += scoreInfo.score;
+          }
+        });
+      }
+      return acc;
+    }, {});
+
+    // console.log("scoreMap:", scoreMap);
+
+    // อัปเดตคะแนนใน data.scores โดยใช้ scoreMap
+    const updatedScores = data.scores.map(s => {
+      const transformedEmail = s.email.replace(/\./g, '_');
+      return {
+        ...s,
+        score: scoreMap[transformedEmail] || s.score
+      };
+    });
+
+    // console.log("updatedScores:", updatedScores);
+
+    // สร้างข้อมูลที่รวมคะแนนทั้งหมด
+    const aggregatedData = updatedScores.reduce((acc, score) => {
+      const existingIndex = acc.findIndex(item => item.email === score.email);
+      if (existingIndex === -1) {
+        acc.push({
+          email: score.email,
+          name: score.name,
+          totalScore: score.score,
+          profileNumber: score.profileNumber,
+          rooms: new Set([data.roomNumber])
+        });
+      } else {
+        acc[existingIndex].totalScore += score.score;
+        acc[existingIndex].rooms.add(data.roomNumber);
+      }
+      return acc;
+    }, []);
+
+    // console.log("aggregatedData:", aggregatedData);
+
+    return aggregatedData
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1,
+        rooms: Array.from(item.rooms)
+      }));
+  }, [data, scores]);
 
   if (!sortedData.length) {
     return <div>No scores available</div>;
@@ -32,12 +75,12 @@ const Leaderboard = ({ data }) => {
       <h1 className='text-2xl p-5'>Leaderboard</h1>
       <div className={styles.topThree}>
         {sortedData.slice(0, 3).map((item, index) => (
-          <div key={index} className={styles.topBox}>
-            <h2>#{index + 1}</h2>
+          <div key={item.email} className={styles.topBox}>
+            <h2>#{item.rank}</h2>
             <Link className={styles.topLink} href={`/room/${id}/profile/${item.profileNumber}`}>
               <p>{item.name}</p>
             </Link>
-            <p>{item.score} points</p>
+            <p>{item.totalScore} points</p>
           </div>
         ))}
       </div>
@@ -46,19 +89,19 @@ const Leaderboard = ({ data }) => {
           <tr>
             <th>Rank</th>
             <th>Name</th>
-            <th>Score</th>
+            <th>Total Score</th>
           </tr>
         </thead>
         <tbody>
           {sortedData.slice(3).map((item, index) => (
-            <tr key={index + 3}>
-              <td>{index + 4}</td>
+            <tr key={item.email}>
+              <td>{item.rank}</td>
               <td>
                 <Link href={`/room/${id}/profile/${item.profileNumber}`} className={styles.link}>
                   <p>{item.name}</p>
                 </Link>
               </td>
-              <td>{item.score}</td>
+              <td>{item.totalScore} points</td>
             </tr>
           ))}
         </tbody>

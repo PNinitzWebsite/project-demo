@@ -17,16 +17,33 @@ library.add(fas)
 const SyntaxHighlighter = require('react-syntax-highlighter').Prism;
 const { tomorrow } = require('react-syntax-highlighter/dist/cjs/styles/prism/tomorrow');
 
-const ExamDetailPage = ({ email, users, initialQuestions }) => {
+const ExamDetailPage = ({ email, users, initialQuestions,hostAdmin }) => {
   const router = useRouter();
   const { exam, id } = router.query;
   const [room, setRoom] = useState(null);
-  const [host, setHost] = useState(null);
+  const [host, setHost] = useState('');
   const [code, setCode] = useState('');
   const [result, setResult] = useState(null);
+  const [fresult, setFresult] = useState(null);
+  const [close, setClose] = useState(false); 
   const [processing, setProcessing] = useState(false); // เพิ่ม state เพื่อเก็บสถานะของการประมวลผล
   const [loading, setLoading] = useState(true); // เพิ่ม state เพื่อเก็บสถานะการโหลด
   const [questions, setQuestions] = useState(initialQuestions || []);
+  const [variableCheckResult, setVariableCheckResult] = useState([]);
+  const [point, setPoint] = useState('');
+  const [pointCount, setPointCount] = useState('');
+  
+  const [answerSubmitted, setAnswerSubmitted] = useState(false);
+  const [variableScores, setVariableScores] = useState({});
+  
+  // ฟังก์ชันสำหรับอัปเดตคะแนนของตัวแปร
+  const updateVariableScore = (varName, score) => {
+    setVariableScores(prevScores => ({
+      ...prevScores,
+      [varName]: score
+    }));
+  };
+
 
   const handleTab = async (event) => {
     if (event.key === 'Tab' && !event.repeat) {
@@ -46,55 +63,175 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
       event.stopPropagation();
     }
   };
-
-  const checkSyntax = async () => {
-    setProcessing(true); // ตั้งค่าสถานะเป็น true เมื่อเริ่มการประมวลผล
-    const response = await fetch('/api/checkSyntax', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ code }),
-    });
-
-    const data = await response.json();
-    setResult(data);
-    setProcessing(false); // ตั้งค่าสถานะเป็น false เมื่อการประมวลผลเสร็จสิ้น
-  };
-
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
         if (!id) return;
-
+  
         const res = await fetch(`/api/room/${id}`);
         if (!res.ok) {
           throw new Error('Room not found');
         }
-
+  
         const data = await res.json();
         const { room } = data;
-
+  
         setRoom(room);
-
-        switch (true) {
-          case email === room.userHost:
-            setHost("host");
-            break;
-          default:
-            const index = room.users.findIndex(user => user === email);
-            break;
-        }
+  
       } catch (error) {
         console.error('Error fetching room:', error);
-        // Handle error, such as redirecting to room selection page
       } finally {
-        setLoading(false); // ตั้งค่า loading เป็น false เมื่อการประมวลผลเสร็จสิ้น
+        if (email === hostAdmin) {
+          setHost("host");
+          setLoading(false);
+        }else{
+          setHost("client");
+          setLoading(false);
+        }
       }
     };
-
+  
     fetchRoomData();
   }, [id, email]);
+  
+
+  useEffect(() => {
+    const checkSubmittedAnswer = async () => {
+      try {
+        const response = await fetch(`/api/checkSubmittedAnswer?roomId=${id}&examId=${exam}&email=${email}`);
+        const data = await response.json();
+        if (data.submitted) {
+          setAnswerSubmitted(true);
+          setPoint(`คุณทำถูก: ${data.correctCount}/${data.totalQuestions} ข้อ`);
+          setPointCount(`คะแนนของคุณ: ${data.totalScore}/${data.maxScore} คะแนน`);
+        }
+      } catch (error) {
+        console.error('Error checking submitted answer:', error);
+      }
+    }; 
+  
+    if(id && exam && email && host !== "host"){
+      checkSubmittedAnswer();
+    }
+  }, [email, id, exam, host]);
+
+  useEffect(() => {
+    if (questions[parseInt(exam)-1]?.variableScores) {
+      setVariableScores(questions[parseInt(exam)-1].variableScores);
+    } else if (questions[parseInt(exam)-1]?.question) {
+      // If there's a question but no variableScores, create new ones
+      const newVariableScores = questions[parseInt(exam)-1].question.split(',').reduce((acc, variable) => {
+        const varName = variable.split('=')[0];
+        acc[varName] = 0;
+        return acc;
+      }, {});
+      setVariableScores(newVariableScores);
+    }
+  }, [exam, questions]);
+
+
+  const submitAnswer = async () => {
+    if (!fresult) {
+      alert('กรุณาตรวจสอบโค้ดของคุณก่อนส่งคำตอบ');
+      return;
+    }
+    
+    setProcessing(true);
+    try {
+      const response = await fetch('/api/submitAnswer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          roomId: id, 
+          examId: exam, 
+          email: email, 
+          answer: fresult,
+          code: code
+        }),
+      });
+  
+      const data = await response.json();
+      if (response.ok) {
+        setAnswerSubmitted(true);
+        alert('ส่งคำตอบเรียบร้อยแล้ว');
+        window.location.reload();
+      } else {
+        alert(data.message || 'เกิดข้อผิดพลาดในการส่งคำตอบ');
+      }
+    } catch (error) {
+      console.error('Error submitting answer:', error);
+      alert('เกิดข้อผิดพลาดในการส่งคำตอบ');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+const checkSyntax = async () => {
+  if (!code.trim()) {
+    setResult({success:false,error:'กรุณากรอกโค้ด'});
+    return;
+  }
+  setProcessing(true);
+  const response = await fetch('/api/checkSyntax', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ code }),
+  });
+
+  const data = await response.json();
+  
+  setResult(data);
+  setProcessing(false);
+  if (data.compiledResult) {
+    const lines = code.split('\n');
+    const variables = {};
+
+    lines.forEach(line => {
+      if (line.includes('=') && !line.trim().startsWith('print')) {
+        const [varName, varValue] = line.split('=').map(part => part.trim());
+        variables[varName] = varValue;
+      }
+    });
+
+    // ประเมินค่าของตัวแปรที่มีการคำนวณ
+    Object.keys(variables).forEach(varName => {
+      if (variables[varName].includes('-') || variables[varName].includes('+')) {
+        variables[varName] = eval(variables[varName].replace(/[a-zA-Z]/g, match => variables[match] || match));
+      }
+    });
+
+    const fResult = Object.entries(variables).map(([name, value]) => `${name}=${value}`).join(',');
+    setFresult(fResult);
+
+    // ตรวจสอบความถูกต้องของแต่ละตัวแปร
+    const correctAnswer = questions[parseInt(exam)-1]?.question; // เพิ่ม ? เพื่อป้องกัน null
+    if (correctAnswer) {
+      const correctVariables = correctAnswer.split(',').reduce((acc, curr) => {
+        const [name, value] = curr.split('=');
+        acc[name] = value;
+        return acc;
+      }, {});
+
+      const checkResult = Object.keys(correctVariables).map(varName => {
+        const isCorrect = variables[varName] === correctVariables[varName];
+        const isDefined = varName in variables;
+        return { varName, isCorrect, isDefined };
+      });
+
+      setVariableCheckResult(checkResult);
+    } else {
+      setVariableCheckResult([]);
+    }
+  } else {
+    setResult(data.message || 'เกิดข้อผิดพลาด');
+  }
+};
+  
+ 
 
   const handleExit = () => {
     // Redirect to another page
@@ -104,30 +241,71 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
     });
   };
 
-  const saveQuestion = async (compiledResult) => {
-    try {
-      const response = await fetch('/api/saveQuestion', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        
-        body: JSON.stringify({ roomId: id, question: compiledResult, exam:questions[parseInt(exam)-1].exam ,name:questions[parseInt(exam)-1].name,detel:questions[parseInt(exam)-1].detel }),
-      });
+  const handleCode = async () => {
+    setProcessing(true);
+  try {
+   if(!questions[parseInt(exam)-1].code){
+    alert('ไม่มีโค้ด');
+   }else{
+    setCode(questions[parseInt(exam)-1].code);
+   }
+
+  } catch (error) {
+    console.error('Error:', error);
+    alert('เกิดข้อผิดพลาดในดึงโค้ด');
+  } finally {
+    setProcessing(false);
+  }
+};
+
+// ฟังก์ชันสำหรับบันทึกโจทย์
+const saveQuestion = async (compiledResult, variableScores) => {
+  try {
+    const variables = compiledResult.split(',').map(v => v.split('=')[0]);
+    const newVariableScores = variables.reduce((acc, varName) => {
+      acc[varName] = variableScores[varName] || 0;
+      return acc;
+    }, {});
+
+    const response = await fetch('/api/saveQuestion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code,
+        roomId: id,
+        question: compiledResult,
+        exam: questions[parseInt(exam)-1].exam,
+        variableScores: newVariableScores
+      }),
+    });
+    
+    const data = await response.json();
+    if (response.ok) {
+      alert(data.message);
+      setQuestions(prevQuestions => {
+        if (!Array.isArray(prevQuestions)) {
+          return []; // หรือให้กำหนดเป็นอาเรย์ว่างหากไม่ใช่ array
+        }
       
-      const data = await response.json();
-      if (response.ok) {
-        alert(data.message);
-        setQuestions(prevQuestions => [...prevQuestions, { question: compiledResult }]); // เพิ่มคำถามใน state
-        window.location.reload();
-      } else {
-        alert(data.message);
-      }
-    } catch (error) {
-      console.error('Error saving question:', error);
-      alert('เกิดข้อผิดพลาดในการบันทึกโจทย์');
+        return [
+          ...prevQuestions.slice(0, parseInt(exam) - 1),
+          { ...prevQuestions[parseInt(exam) - 1], question: compiledResult, variableScores: newVariableScores },
+          ...prevQuestions.slice(parseInt(exam))
+        ];
+      });      
+      setVariableScores(newVariableScores);
+      setClose(true);
+      window.location.reload();
+    } else {
+      alert(data.message);
     }
-  };
+  } catch (error) {
+    console.error('Error saving question:', error);
+    alert('เกิดข้อผิดพลาดในการบันทึกโจทย์');
+  }
+};
 
   return (
     <div
@@ -139,11 +317,11 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
       }
     }}>
       <Layout pageTitle="Welcome">
-        {loading ? (
-          <Loading />
-        ) : (
+      {loading ? (
+      <Loading />
+      ) : (
           <>
-            {users && Array.isArray(users) && (users.includes(email) || host === "host") ? (
+            {users && users.includes(email) || host === "host" ? (
               <>
                 {room ? (
                   <>
@@ -151,13 +329,16 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
                       <button className='text-sm mt-6 mb-6' onClick={handleExit}>Exit</button>
                     </div>
 
-                    {host === "host" ? (
+                    {host == "host" ? (
                       // ของ Host
                       <>
                         <center className='text-2xl bg-red-500 text-center uppercase'>Host</center>
                         <h1 className='mt-5'>ข้อสอบ {exam}</h1>
 
-                        <h1 className='mt-10 mb-5 text-2xl'>กรอกโจทย์โค้ด Python หัวข้อ: {questions[parseInt(exam)-1].name}</h1>
+                        <h1 className='mt-10 mb-5 text-2xl'>กรอกโจทย์โค้ด Python หัวข้อ: {initialQuestions[parseInt(exam)-1].name}</h1>
+                        <div>
+                        <button className='text-sm mt-2 mb-6' onClick={handleCode}>ดึงโจทย์เก่า</button>
+                        </div>
         <div style={{ maxWidth:'70dvw',margin:'0 auto', }}>
           <SyntaxHighlighter language="python" style={tomorrow}>
             {code}
@@ -169,7 +350,7 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
             placeholder="เขียนโค้ดที่นี่..."
             style={{
               width: '100%',color:'black',
-              height: '150px',maxWidth:'70dvw',
+              height: '15rem',maxWidth:'70dvw',
               borderRadius: '10px',
               padding: '10px',
               fontFamily: 'monospace',
@@ -194,9 +375,8 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
                           </ul>
                         ) : (
                           <h1>ยังไม่มีโจทย์</h1>
-                        )}
-
-
+                        )}   
+   
                         {processing ? (
                           <p>กรุณารอคำนวณสักครู่...</p>
                         ) : (
@@ -209,15 +389,98 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
                               ) : (
                                 <p className='text-red-500'>{result.error}</p>
                               )}
-                              {result.compiledResult && (
+                             
+                              {fresult && (
                                 <>
-                                  <p className='mt-2 text-green-500'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์โจทย์: <br /> {result.compiledResult}</p>
-                                  {host === "host" && (
-                                    <button className='mt-3' onClick={() => saveQuestion(result.compiledResult)}>
-                                      ตั้งค่าผลลัพท์ให้เป็นโจทย์
+                                  <p className='mt-2 text-green-500'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์โจทย์ (ล่าสุด): <br /> {fresult}</p>
+            
+                                   {fresult === initialQuestions[parseInt(exam)-1].question ? (
+                                  <>
+                                    <h1 className='mt-5 mb-1 text-xl'>ตั้งค่าคะแนนสำหรับแต่ละตัวแปร:</h1>
+                                    {fresult.split(',').map(variable => {
+                                      const varName = variable.split('=')[0];
+                                      return (
+                                        <div key={varName} className="mb-2">
+                                          <label htmlFor={`score-${varName}`} className="mr-2">{varName}:</label>
+                                          <input
+                                            type="number"
+                                            id={`score-${varName}`}
+                                            value={(variableScores && variableScores[varName] !== undefined) ? variableScores[varName] : 0}
+                                            onChange={(e) => {
+                                              const newValue = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                              updateVariableScore(varName, newValue);
+                                            }}
+                                            min="0"
+                                            className="w-16 px-2 py-1 text-black"
+                                          />
+                                        </div>
+                                      );
+                                    })}
+                                    <button disabled={close}
+                                      className='mt-3' 
+                                      onClick={() => saveQuestion(fresult, variableScores)}
+                                    >
+                                      ตั้งค่าผลลัพธ์และคะแนนเป็นโจทย์
                                     </button>
-                                  )}
-    
+                                    
+                                    <h1 className='mt-10 text-xl'>เช็กโค้ดเดิม (จากการคำนวณล่าสุด)</h1>
+                                    <h1 className='mb-10 text-green-300 text-xl'>
+                                    <br />
+                                    <FontAwesomeIcon icon="fa-solid fa-circle-check" className='w-8 mr-2 inline-table'/>
+                                      คำตอบถูกต้องทั้งหมด</h1>
+                                  </>
+                                ) : (
+                                  <>
+                                  <h1 className='mt-5 mb-1 text-xl'>ตั้งค่าคะแนนสำหรับแต่ละตัวแปร:</h1>
+                                  {fresult.split(',').map(variable => {
+                                    const varName = variable.split('=')[0];
+                                    return (
+                                      <div key={varName} className="mb-2">
+                                        <label htmlFor={`score-${varName}`} className="mr-2">{varName}:</label>
+                                        <input
+                                          type="number"
+                                          id={`score-${varName}`}
+                                          value={variableScores[varName] !== undefined ? variableScores[varName] : 0}
+                                          onChange={(e) => {
+                                            const newValue = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                            updateVariableScore(varName, newValue);
+                                          }}
+                                          min="0"
+                                          className="w-16 px-2 py-1 text-black"
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                  <button disabled={close}
+                                    className='my-4' 
+                                    onClick={() => saveQuestion(fresult, variableScores)}
+                                  >
+                                    ตั้งค่าโจทย์ผลลัพธ์ใหม่
+                                  </button>
+
+
+                                    {initialQuestions[parseInt(exam)-1].question === "" ? (
+                                      <h1 className=' text-red-300 text-xl'>ไม่มีเฉลย</h1>
+                                    ) : (
+                                      <>
+                                        {initialQuestions[parseInt(exam)-1].question ? 
+                                        <h1 className='mt-10 mb-3 text-xl'>ผลการทดสอบแต่ละตัวแปร (ตามโจทย์เดิม)</h1>
+                                      : ""}
+                                        {variableCheckResult.map(({ varName, isCorrect, isDefined }) => (
+                                        <p key={varName} className={isDefined ? (isCorrect ? 'text-green-500' : 'text-red-500') : 'text-yellow-500'}>
+                                          {varName}: {
+                                            isDefined 
+                                              ? (isCorrect ? 'ถูกต้อง' : 'ไม่ถูกต้อง') 
+                                              : 'ไม่ได้กำหนดค่า'
+                                          }
+                                        </p>
+                                      ))}
+                                      
+                                       
+                                      </>
+                                    )}
+                                  </>
+                                )}
                                 </>
                               )}
                             </div>
@@ -235,31 +498,43 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
                         
                         <h1 className='mt-10 mb-5 text-2xl'>ตรวจสอบไวยากรณ์ของโค้ด Python</h1>
                         <div style={{ maxWidth:'85dvw',margin:'0 auto', }}>
-                        <SyntaxHighlighter language="python" style={tomorrow}>
+                        <SyntaxHighlighter language="python" style={tomorrow} disabled={answerSubmitted}>
                           {code}
                         </SyntaxHighlighter>
-                        <textarea
+                        <textarea 
                           value={code}
                           onChange={(e) => setCode(e.target.value)}
                           onKeyDown={handleTab}
                           placeholder="เขียนโค้ดที่นี่..."
+                          disabled={answerSubmitted}
                           style={{
-                            width: '100%',color:'black',
-                            height: '150px',maxWidth:'85dvw',
+                            width: '100%',
+                            color: answerSubmitted ? 'gray' : 'black',
+                            height: '15rem',
+                            maxWidth:'85dvw',
                             borderRadius: '10px',
                             padding: '10px',
                             fontFamily: 'monospace',
                             fontSize: '16px',
                             marginTop: '10px',
+                            backgroundColor: answerSubmitted ? '#f0f0f0' : 'white',
                           }}
                         />
                       </div>
-                        <button className='mt-5 mb-5 block mx-auto hover:text-green-500' onClick={checkSyntax}>ตรวจสอบไวยากรณ์</button>
-
+                        <button disabled={answerSubmitted} className='mt-5 mb-5 block mx-auto hover:text-green-500' onClick={checkSyntax}>ตรวจสอบผลลัพท์</button>
+                        
+                        {point != '' ?(
+                          <>
+                          <p className="mt-4 text-lg font-semibold">{point}</p>
+                          <p className="mt-4 text-lg font-semibold">{pointCount}</p>
+                          
+                          </>):(<></>)}
+                        
+                      
                         {processing ? (
                           <p>กรุณารอคำนวณสักครู่...</p>
                         ) : (
-                          
+        
                           result && (
                             <div>
                               <h2>ผลลัพธ์:</h2>
@@ -268,32 +543,61 @@ const ExamDetailPage = ({ email, users, initialQuestions }) => {
                               ) : (
                                 <p className='text-red-500'>{result.error}</p>
                               )}
-                              {result.compiledResult && (
-                                <>
-                                  <p className='mt-2 text-green-500'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์โจทย์: {result.compiledResult}</p>
+                              {fresult && (
+                              <>
+                                <p className='mt-2 text-green-500'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์: {fresult}</p>
 
-                                  {result.compiledResult === questions[parseInt(exam)-1].question ? (
-                                    <>
-                                      <h1 className='mb-10 text-green-300 text-xl'>
-                                      <br />
-                                      <FontAwesomeIcon icon="fa-solid fa-circle-check" className='w-8 mr-2 inline-table'/>
-                                        คำตอบถูกต้อง</h1>
-                                    </>
-                                  ) : (
-                                    <>
-                                      {questions[parseInt(exam)-1].question === "" ? <h1 className=' text-red-300 text-xl'>ไม่มีคำโจทย์</h1> :
-                                        <h1 className='mb-10 text-red-300 text-xl'>
-                                          <br />
-                                          <FontAwesomeIcon icon="fa-solid fa-circle-xmark" className='w-8 mr-2 inline-table' />
-                                          คำตอบไม่ถูกต้อง</h1>
-                                      }
-                                    </>)}
-                                </>
-                              )}
+                                {fresult === questions[parseInt(exam)-1].question ? (
+                                  <>
+                                    <h1 className='mb-6 text-green-300 text-xl'>
+                                    <br />
+                                    <FontAwesomeIcon icon="fa-solid fa-circle-check" className='w-8 mr-2 inline-table'/>
+                                      คำตอบถูกต้องทั้งหมด</h1>
+                                  </>
+                                ) : (
+                                  <>
+                                    {questions[parseInt(exam)-1].question === "" ? (
+                                      <h1 className=' text-red-300 text-xl'>ไม่มีคำโจทย์</h1>
+                                    ) : (
+                                      <>
+                                        <h1 className='mb-2 text-xl'>ผลการตรวจสอบแต่ละตัวแปร:</h1>
+                                        {variableCheckResult.map(({ varName, isCorrect, isDefined }) => (
+                                        <p key={varName} className={isDefined ? (isCorrect ? 'text-green-500' : 'text-red-500') : 'text-yellow-500'}>
+                                          {varName}: {
+                                            isDefined 
+                                              ? (isCorrect ? 'ถูกต้อง' : 'ไม่ถูกต้อง') 
+                                              : 'ไม่ได้กำหนดค่า'
+                                          }
+                                        </p>
+                                      ))}
+                                      </>
+                                    )}
+                                  </>
+                                )}
+                              </>
+                            )}
+                           
                             </div>
                           )
                         )}
-
+                        
+                        {!answerSubmitted ? (
+  <>
+    {fresult && (
+      <button 
+        className='mt-5 mb-5 block mx-auto border-blue-500 hover:text-blue-500 hover:border-blue-500'
+        onClick={submitAnswer}
+        disabled={processing}
+      >
+        ส่งคำตอบ
+      </button>
+    )}
+  </>
+) : (
+  <>
+    <p className='my-5 text-xl'>คุณได้ส่งคำตอบแล้ว ไม่สามารถแก้ไขหรือส่งใหม่ได้</p>
+  </>
+)}
                         <br />
                       </>
                     )}
@@ -362,12 +666,14 @@ export async function getServerSideProps(context) {
   // Ensure users is an array or null
   const users = room.users || null;
   const questions = room.questions || [];
+  const hostAdmin = room.userHost;
   return {
     props: {
       email,
       roomNumber: id, // ส่ง roomNumber ไปด้วย
       users,
       initialQuestions: questions,
+      hostAdmin
     },
   };
 }
