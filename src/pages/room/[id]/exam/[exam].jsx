@@ -187,6 +187,7 @@ const checkSyntax = async () => {
   setResult(data);
   setProcessing(false);
   if (data.compiledResult) {
+    console.log("DATA:",data.compiledResult)
     const lines = code.split('\n');
     const variables = {};
 

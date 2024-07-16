@@ -18,6 +18,18 @@ const Rooms = ({ email }) => {
   const [error, setError] = useState(null);
   const [roomName, setRoomName] = useState('');
 
+  const [isModalOpenDelete, setIsModalOpenDelete] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState('');
+
+
+  const handleOpenModalDelete = () => {
+    setIsModalOpenDelete(true);
+  };
+  
+  const handleCloseModalDelete = () => {
+    setIsModalOpenDelete(false);
+  };
+
   useEffect(() => {
     if (isModalOpen && userHostRoomsCount >= 0) {
       setRoomName(`ห้อง ${userHostRoomsCount + 1}`);
@@ -25,6 +37,29 @@ const Rooms = ({ email }) => {
       setRoomName('');
     }
   }, [isModalOpen, userHostRoomsCount]);
+
+  const deleteRoom = async () => {
+    try {
+      const response = await fetch('/api/delete-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomNumber: selectedRoom }),
+      });
+  
+      if (response.ok) {
+        alert(`ห้อง ${selectedRoom} ถูกลบเรียบร้อยแล้ว`);
+        fetchData(); // Refresh the data after deleting the room
+        handleCloseModalDelete();
+      } else {
+        console.error('Failed to delete room');
+      }
+    } catch (error) {
+      console.error('Error deleting room:', error);
+    }
+  };
+  
 
 
 
@@ -150,6 +185,42 @@ const Rooms = ({ email }) => {
        
           <Link className='text-red-500 hover:text-red-800' href="/api/logout">Logout</Link>
         
+          {isModalOpenDelete && userHostRooms.length > 0 && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-8 rounded-lg">
+      <h1 className="text-lg text-black font-bold mb-4">เลือกห้องเพื่อลบ</h1>
+      <select
+        value={selectedRoom}
+        onChange={(e) => setSelectedRoom(e.target.value)}
+        className="border text-black bg-white border-gray-300 rounded px-4 py-2 w-full mb-4"
+      >
+        <option value="">เลือกห้อง</option>
+        {userHostRooms.map(room => (
+          <option key={room._id} value={room.roomNumber}>
+            {room.roomName || `ห้อง ${room.roomNumber}`}
+          </option>
+        ))}
+      </select>
+
+      <div className="flex justify-end">
+        <button
+          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 border-gray-600 hover:border-gray-800"
+          onClick={handleCloseModalDelete}
+        >
+          ยกเลิก
+        </button>
+        <button
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700"
+          onClick={deleteRoom}
+          disabled={!selectedRoom}
+        >
+          ลบห้อง
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
           <br />
           {userRoomsCount < 8 ?(
@@ -215,6 +286,9 @@ const Rooms = ({ email }) => {
          {userHostRoomsCount > 0 ? (
   <>
     <h2 className='text-2xl mt-10'>คุณมี {userHostRoomsCount}/12 ห้อง</h2>
+    
+    <button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700" onClick={handleOpenModalDelete}>ลบห้อง</button>
+
     <div className="flex flex-wrap justify-stretch mt-4">
   {userHostRooms.map(room => (
     <div key={room._id} className="w-1/4  p-2">

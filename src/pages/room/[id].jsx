@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useCallback } from 'react';
 import Link from 'next/link';
 import Layout from '@/components/layout';
 import { getCookie } from 'cookies-next';
@@ -32,14 +32,121 @@ const Room = ({ email ,users, initialQuestions }) => {
   const [detelQuestions, setDetelQuestions] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenDelete, setIsModalOpenDelete] = useState(false);
+  const [isEditRoomNameModalOpen, setIsEditRoomNameModalOpen] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
   const [file, setFile] = useState(null);
 
   const [questions, setQuestions] = useState(initialQuestions);
   const hasQuestions = Array.isArray(questions) ? questions.length > 0 : Object.keys(questions).length > 0;
   const [newCategory, setNewCategory] = useState('');
   const [isMovingCategory, setIsMovingCategory] = useState(false);
-  const [code, setCode] = useState('');
+  const [isModalOpenRemoveUser, setIsModalOpenRemoveUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState('');
 
+  const handleOpenModalRemoveUser = () => {
+    setIsModalOpenRemoveUser(true);
+  };
+  
+  const handleCloseModalRemoveUser = () => {
+    setIsModalOpenRemoveUser(false);
+  };
+
+  const removeUserFromRoom = async () => {
+    try {
+      const response = await fetch('/api/remove-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomNumber:id, userEmail: selectedUser }),
+      });
+  
+      if (response.ok) {
+        alert(`ผู้ใช้ ${selectedUser} ถูกลบออกจากห้อง ${id} เรียบร้อยแล้ว`);
+        fetchRoomData(); // Refresh the data after removing the user
+        handleCloseModalRemoveUser();
+      } else {
+        console.error('Failed to remove user from room');
+      }
+    } catch (error) {
+      console.error('Error removing user from room:', error);
+    }
+  };
+  
+  const fetchRoomData = useCallback(async () => {
+    try {
+      if (!id) return;
+
+      const res = await fetch(`/api/room/${id}`);
+      if (res.status === 404) {
+        throw new Error('ไม่พบห้องที่คุณกำลังมองหา');
+      }
+      if (!res.ok) {
+        throw new Error('เกิดข้อผิดพลาดในการโหลดข้อมูลห้อง');
+      }
+
+      const data = await res.json();
+      const { room } = data;
+
+      setRoom(room);
+
+      if (email === room.userHost) {
+        setHost('host');
+      } else {
+        setHost('client');
+        const index = room.users.findIndex(user => user === email);
+        setProfileNumber(index + 1);
+      }
+    } catch (error) {
+      console.error('Error fetching room:', error);
+      alert(error.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลห้อง กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, email]);
+
+  useEffect(() => {
+    fetchRoomData();
+  }, [fetchRoomData]);
+
+  const openEditRoomNameModal = () => {
+    setIsEditRoomNameModalOpen(true);
+  };
+  
+  const closeEditRoomNameModal = () => {
+    setIsEditRoomNameModalOpen(false);
+    setNewRoomName('');
+  };
+  
+  const handleRoomNameChange = (e) => {
+    setNewRoomName(e.target.value);
+  };
+
+  const saveNewRoomName = async () => {
+    try {
+      const response = await fetch('/api/room/updateRoomName', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomNumber: id, newRoomName }),
+      });
+  
+      if (response.ok) {
+        // Update the roomName state or re-fetch data as needed
+        console.log('Room name updated successfully');
+        // You might want to update your local state here
+        window.location.reload();
+      } else {
+        console.error('Failed to update room name');
+      }
+    } catch (error) {
+      console.error('Error updating room name:', error);
+    } finally {
+      closeEditRoomNameModal();
+    }
+  };
+  
 
   const openModal = (exam) => {
     setSelectedExam(exam);
@@ -223,81 +330,19 @@ const Room = ({ email ,users, initialQuestions }) => {
       console.error('Error deleting question:', error);
     }
   };
-
-  useEffect(() => {
-    const fetchRoomData = async () => {
-      try {
-        if (!id) return;
-  
-        const res = await fetch(`/api/room/${id}`);
-        if (res.status === 404) {
-          throw new Error('ไม่พบห้องที่คุณกำลังมองหา');
-        }
-        if (!res.ok) {
-          throw new Error('เกิดข้อผิดพลาดในการโหลดข้อมูลห้อง');
-        }
-  
-        const data = await res.json();
-        const { room } = data;
-  
-        setRoom(room);
-       
-        if (email === room.userHost) {
-          setHost("host");
-        } else {
-          const index = room.users.findIndex(user => user === email);
-          setProfileNumber(index + 1);
-        }
-      } catch (error) {
-        console.error('Error fetching room:', error);
-        // แสดงข้อความแจ้งเตือนแก่ผู้ใช้
-        alert(error.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลห้อง กรุณาลองใหม่อีกครั้ง');
-        // อาจจะ redirect ผู้ใช้กลับไปยังหน้าเลือกห้อง
-        // router.push('/room-selection');
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchRoomData();
-  }, [id, email]);
   
 
   const handleExit = () => {
     // Redirect to another page
     router.push('/');
   };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newScore = prompt(`กรุณาใส่คะแนนที่ต้องการเพิ่ม ของอีเมล ${email}`, "100");
-    // ตรวจสอบถ้าผู้ใช้กด Cancel
-    if (newScore === null) {
-      alert('ไม่ได้เพิ่มหรือแก้คะแนน');
-      return;
-    }
-    try {
-      const response = await fetch(`/api/add-score?roomNumber=${room.roomNumber}&email=${email}&score=${newScore}`, {
-        method: 'GET',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to add score');
-      }
-      const data = await response.json();
-      alert(`เพิ่มข้อมูล ${email} สำเร็จแล้ว`); // แจ้งเตือนว่าเพิ่มข้อมูลสำเร็จ
-    } catch (error) {
-      console.error('Error adding score:', error);
-      alert('เกิดข้อผิดพลาดในการเพิ่มคะแนน');
-    }
-  };
-  
   
   const handleEditNickname = () => {
     setShowModal(true);
   };
 
   const handleSaveNickname = async (newNickname) => {
-    const response = await fetch(`/api/add-name?roomNumber=${room.roomNumber}&email=${email}&name=${newNickname}`, {
+    const response = await fetch(`/api/add-name?roomNumber=${room.roomNumber}&email=${email}&name=${newNickname}&roles=${host}`, {
       method: 'GET',
     });
     const data = await response.json();
@@ -309,7 +354,9 @@ const Room = ({ email ,users, initialQuestions }) => {
           user.email === email ? { ...user, name: newNickname } : user
         )
       }));
+      fetchRoomData();
     }
+
     if(!newNickname){
       alert(`แก้ไขชื่อเล่นไม่สำเร็จ!!!!!!`);
     }else {
@@ -380,6 +427,8 @@ const Room = ({ email ,users, initialQuestions }) => {
     }
   };
 
+  
+
   const handleAddQestion = async () => {
     setIsModalOpen(true);
   };
@@ -427,9 +476,75 @@ const Room = ({ email ,users, initialQuestions }) => {
                         // ของ Host
                         <>
                           <center className='text-2xl bg-red-500 text-center uppercase'>Host</center>
-                          <h1 className="text-3xl mt-10">ชื่อห้อง :<span className='text-white'> {room.roomName}</span> </h1>
+                          <nav>
+                          <a className="mt-10 inline-block text-sm cursor-pointer text-gray-500 hover:text-red-500" onClick={() => openEditRoomNameModal()}>
+                             แก้ไข</a>
+                          <h1 className="text-3xl">ชื่อห้อง :<span className='text-white'> {room.roomName}</span> </h1>
                           <h1 className="text-3xl mt-10">Welcome <span className={styles.greenText}>{email}</span> to Room
                           <span className={styles.yellowText}> {room.roomNumber}</span></h1>
+                          </nav>
+                          
+
+    <Modal
+      isOpen={isEditRoomNameModalOpen}
+      onRequestClose={closeEditRoomNameModal}
+      overlayClassName={styles.ReactModal__Overlay}
+       className={styles.ReactModal__Content}
+      contentLabel="Edit Room Name Modal"
+    >
+      <h2 className='mb-5'>Edit Room Name</h2>
+      <input required
+        type="text"
+        value={newRoomName}
+        onChange={handleRoomNameChange}
+        className='mb-5'
+      />
+      <br />
+      <button className='mr-4' onClick={saveNewRoomName}>Save</button>
+      <button className='mr-4' onClick={closeEditRoomNameModal}>Cancel</button>
+    </Modal>
+
+    {isModalOpenRemoveUser && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-8 rounded-lg">
+      <h1 className="text-lg text-black font-bold mb-4">เลือกผู้ใช้เพื่อลบออกจากห้อง</h1>
+      <select
+        value={selectedUser}
+        onChange={(e) => setSelectedUser(e.target.value)}
+        className="border text-black bg-white border-gray-300 rounded px-4 py-2 w-full mb-4"
+      >
+        <option value="">เลือกผู้ใช้</option>
+       
+          {room.users.map(user => (
+            <option key={user} value={user}>
+              {user}
+            </option>
+          ))
+        }
+      </select>
+
+      <div className="flex justify-end">
+        <button
+          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+          onClick={handleCloseModalRemoveUser}
+        >
+          ยกเลิก
+        </button>
+        <button
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800"
+          onClick={removeUserFromRoom}
+          disabled={!selectedUser}
+        >
+          ลบผู้ใช้
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+<button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800" onClick={handleOpenModalRemoveUser}>ลบผู้ใช้ออกจากห้อง</button>
+
+  
   
                           <h1 className='mt-5'>Upload Python File</h1>
 <form onSubmit={uploadPython} className='my-6'>
@@ -706,7 +821,19 @@ const Room = ({ email ,users, initialQuestions }) => {
   <p>ไม่มีเลขข้อสอบและเฉลย</p>
 )}
 
-<h1 className="text-2xl mt-10">มีใครบ้าง :</h1>
+<br />
+{/* เพิ่ม name */}
+<button onClick={handleEditNickname} className=' inline-block hover:text-green-500'>
+                              แก้ไขชื่อเล่น
+                            </button>
+                            <NicknameModal
+                            show={showModal}
+                            onClose={() => setShowModal(false)}
+                            onSave={handleSaveNickname}
+                            initialNickname={nickname}
+                          />
+
+<h1 className="text-2xl mt-5">มีใครบ้าง :</h1>
                     <ul className='mt-3'><li className="text-red-500 text-lg">{room.hostName} (HOST)</li></ul>
                     {room.scores ? (
                       <>
@@ -829,7 +956,7 @@ const Room = ({ email ,users, initialQuestions }) => {
                       </>
                     ) : (<> </>)}
                      
-                    
+
                       
                         </>
                       )}
@@ -838,10 +965,30 @@ const Room = ({ email ,users, initialQuestions }) => {
                     <Loading />
                   )}
                 </>
-              ) : (
-                ""
+              ) : (<>
+                {email ? (
+                  <>
+                <br />
+                  <h1 className='text-3xl mt-5'>ไม่อนุญาตให้ตรวจสอบข้อมูลในห้องอื่น ถ้ายังไม่ได้เข้าร่วมห้อง</h1>
+                  <div className='text-xl mt-5'>
+                  <Link href={{
+                pathname: '/room/[id]',
+                query: { id: `${id}`},
+              }}>ย้อนกลับไป</Link>
+                  </div>
+                  </>
+                ):(
+                <>
+                  <br />
+                  <h1 className='text-3xl mt-5'>ยังไม่ได้เข้าสู่ระบบ</h1>
+                  <div className='text-xl mt-5'>
+                    <Link href="/" >ย้อนกลับไป</Link>
+                  </div>
+                </>
               )}
-            </>
+                      </>
+                    )}
+                    </>
           )}
         </Layout>
       </div>
@@ -870,7 +1017,6 @@ export async function getServerSideProps(context) {
       notFound: true,
     };
   }
-
   // Ensure users is an array or null
   const users = room.users || null;
   // console.log("Initial questions data:", room.questions);
@@ -880,6 +1026,7 @@ export async function getServerSideProps(context) {
       roomNumber: id, // ส่ง roomNumber ไปด้วย
       users,
       initialQuestions: room.questions || {},  
+      
     },
   };
 }

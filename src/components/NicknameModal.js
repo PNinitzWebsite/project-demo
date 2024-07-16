@@ -31,16 +31,15 @@ const NicknameModal = ({ show, onClose, onSave, initialNickname }) => {
         <h2 className="text-xl">Edit Nickname</h2>
         <p className={styles.currentNickname}>Current Nickname: {initialNickname}</p>
         <input
-        type="search"
-        value={nickname}
-        onChange={(e) => {
+          type="text"
+          value={nickname}
+          onChange={(e) => {
             if (e.target.value.length <= 20) {
-            setNickname(e.target.value);
+              setNickname(e.target.value);
             }
-        }}
-        className={styles.input}
+          }}
+          className={styles.input}
         />
-
         {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
         <div className={styles.buttons}>
           <button onClick={onClose} className={styles.buttonred}>

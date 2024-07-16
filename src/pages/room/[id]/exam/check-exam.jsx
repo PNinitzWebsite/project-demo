@@ -35,13 +35,10 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
 
         setRoom(room);
 
-        switch (true) {
-          case email === room.userHost:
-            setHost('host');
-            break;
-          default:
-            setHost('client');
-            break;
+        if (email === room.userHost) {
+          setHost('host');
+        } else {
+          setHost('client');
         }
       } catch (error) {
         console.error('Error fetching room:', error);
@@ -53,7 +50,7 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
     fetchRoomData();
   }, [id, email]);
 
-  const handleCheckAnswer = async (question, email, index, rules) => {
+  const handleCheckAnswer = async (question, email, uniqueId, rules) => {
     try {
       await axios.post('/api/answers/check', {
         roomId: id,
@@ -61,20 +58,19 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
         email,
         rules
       });
-      if(rules == "reset"){
+      if (rules === "reset") {
         alert("รีเซ็ตคำตอบแล้ว");
         window.location.reload();
-      }else{
+      } else {
         // Update the state to mark the answer as checked
-        const updatedAnswers = allAnswers.map((item, idx) => {
-          if (idx === index && item.email === email) {
+        const updatedAnswers = allAnswers.map((item) => {
+          if (item.uniqueId === uniqueId) {
             return { ...item, checked: true };
           }
           return item;
         });
         setAllAnswers(updatedAnswers);
       }
-      
     } catch (error) {
       console.error('Error checking answer:', error);
     }
@@ -96,16 +92,19 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
                 Exit
               </button>
 
-              {uncheckedAnswers.length <= 0 ? <>
-                <h2 className="text-3xl font-bold mb-6 text-center text-white">Unchecked Answers</h2>
-                <h2 className="text-xl font-bold mb-6 text-center text-white">ยังไม่มีคำตอบใหม่</h2>
+              {uncheckedAnswers.length <= 0 ? (
+                <>
+                  <h2 className="text-3xl font-bold mb-6 text-center text-white">Unchecked Answers</h2>
+                  <h2 className="text-xl font-bold mb-6 text-center text-white">ยังไม่มีคำตอบใหม่</h2>
                 </>
-                 : <h2 className="text-3xl font-bold mb-6 text-center text-white">Unchecked Answers</h2>}
-              
+              ) : (
+                <h2 className="text-3xl font-bold mb-6 text-center text-white">Unchecked Answers</h2>
+              )}
+
               <div className="space-y-6">
-                {uncheckedAnswers.map((item, index) => (
-                  <div key={index} className="bg-gray-100 shadow-lg rounded-lg p-6">
-                    <h3 className="text-2xl font-semibold mb-4 text-center">Question {item.question} : {index + 1}</h3>
+                {uncheckedAnswers.map((item) => (
+                  <div key={item.uniqueId} className="bg-gray-100 shadow-lg rounded-lg p-6">
+                    <h3 className="text-2xl font-semibold mb-4 text-center">Question {item.question}</h3>
                     <div className="space-y-2">
                       <p className="text-lg"><span className="font-medium">Email:</span> {item.email}</p>
                       <p className="text-lg"><span className="font-medium">Submitted At:</span> {new Date(item.submittedAt).toLocaleString()}</p>
@@ -115,9 +114,9 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
                         Score: {item.score}/{item.totalScore}
                       </p>
                     </div>
-                    <button 
+                    <button
                       className="mt-4 w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                      onClick={() => handleCheckAnswer(item.question, item.email, index)}
+                      onClick={() => handleCheckAnswer(item.question, item.email, item.uniqueId)}
                     >
                       Mark as Checked
                     </button>
@@ -125,18 +124,21 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
                 ))}
               </div>
 
-                <br />
+              <br />
 
-                {checkedAnswers.length <= 0? <>
-                <h2 className="text-3xl font-bold mb-6 text-center text-white">Checked Answers</h2>
-                <h2 className="text-xl font-bold mb-6 text-center text-white">ยังไม่ได้ตรวจสอบ</h2>
+              {checkedAnswers.length <= 0 ? (
+                <>
+                  <h2 className="text-3xl font-bold mb-6 text-center text-white">Checked Answers</h2>
+                  <h2 className="text-xl font-bold mb-6 text-center text-white">ยังไม่ได้ตรวจสอบ</h2>
                 </>
-                 : <h2 className="text-3xl font-bold mb-6 text-center text-white">Checked Answers</h2>}
-              
+              ) : (
+                <h2 className="text-3xl font-bold mb-6 text-center text-white">Checked Answers</h2>
+              )}
+
               <div className="space-y-6">
-                {checkedAnswers.map((item, index) => (
-                  <div key={index} className="bg-white shadow-lg rounded-lg p-6">
-                    <h3 className="text-2xl font-semibold mb-4 text-center">Question {item.question} : {index + 1}</h3>
+                {checkedAnswers.map((item) => (
+                  <div key={item.uniqueId} className="bg-white shadow-lg rounded-lg p-6">
+                    <h3 className="text-2xl font-semibold mb-4 text-center">Question {item.question}</h3>
                     <div className="space-y-2">
                       <p className="text-lg"><span className="font-medium">Email:</span> {item.email}</p>
                       <p className="text-lg"><span className="font-medium">Submitted At:</span> {new Date(item.submittedAt).toLocaleString()}</p>
@@ -147,17 +149,15 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
                       </p>
                       <p className="text-lg text-green-500 font-medium">Status: Checked</p>
                     </div>
-                    <button 
+                    <button
                       className="mt-4 w-full bg-red-500 hover:bg-red-700 border-red-500 hover:border-red-700 text-white font-bold py-2 px-4 rounded"
-                      onClick={() => handleCheckAnswer(item.question, item.email, index , rules)}
+                      onClick={() => handleCheckAnswer(item.question, item.email, item.uniqueId, rules)}
                     >
                       Delete Question
                     </button>
                   </div>
                 ))}
               </div>
-  
-              
             </div>
           ) : (
             <>
@@ -230,10 +230,11 @@ export async function getServerSideProps(context) {
             email: email,
             answer: scoreInfo.answer,
             score: scoreInfo.score,
-            code:scoreInfo.code,
+            code: scoreInfo.code,
             totalScore: scoreInfo.totalScore,
             submittedAt: scoreInfo.submittedAt.toISOString(),
-            checked: scoreInfo.checked || false
+            checked: scoreInfo.checked || false,
+            uniqueId: `${key}-${email}`
           });
         }
       });
@@ -247,7 +248,7 @@ export async function getServerSideProps(context) {
       users,
       initialQuestions: room.questions || '',
       totalScore: scoreMap[email] || 0,
-      allAnswers:allAnswers || [],
+      allAnswers: allAnswers || [],
     },
   };
 }
