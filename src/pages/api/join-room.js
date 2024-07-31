@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
       // สร้างชื่อผู้ใช้ใหม่โดยใช้รูปแบบ 'User [N]' โดยที่ N เป็นลำดับของผู้ใช้ + 1
       const newUserName = `User [${userCount + 1}]`;
-
+      const currentDate = new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
       // อัปเดตห้องใน MongoDB
       await db.collection("rooms").updateOne(
         { roomNumber },
@@ -41,7 +41,8 @@ export default async function handler(req, res) {
               name: newUserName,
               email: email,
               score: 0,
-              profileNumber: userCount + 1
+              profileNumber: userCount + 1,
+              joinTime:currentDate
             }
           }
         }

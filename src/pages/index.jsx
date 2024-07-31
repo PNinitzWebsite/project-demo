@@ -14,13 +14,15 @@ const Rooms = ({ email }) => {
   const [userHostRooms, setUserHostRooms] = useState([]);
   const [userClientRooms, setUserClientRooms] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [roomName, setRoomName] = useState('');
 
   const [isModalOpenDelete, setIsModalOpenDelete] = useState(false);
+  const [isModalOpenLeave, setIsModalOpenLeave] = useState(false);
+  const [isModalOpenCopy, setIsModalOpenCopy] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState('');
-
 
   const handleOpenModalDelete = () => {
     setIsModalOpenDelete(true);
@@ -28,6 +30,22 @@ const Rooms = ({ email }) => {
   
   const handleCloseModalDelete = () => {
     setIsModalOpenDelete(false);
+  };
+
+  const handleOpenModalLeave = () => {
+    setIsModalOpenLeave(true);
+  };
+  
+  const handleCloseModalLeave = () => {
+    setIsModalOpenLeave(false);
+  };
+
+  const handleOpenModalCopy = () => {
+    setIsModalOpenCopy(true);
+  };
+  
+  const handleCloseModalCopy = () => {
+    setIsModalOpenCopy(false);
   };
 
   useEffect(() => {
@@ -60,8 +78,51 @@ const Rooms = ({ email }) => {
     }
   };
   
+  const removeUserFromRoom = async () => {
+    try {
+      const response = await fetch('/api/remove-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomNumber:selectedRoom, userEmail: email }),
+      });
+  
+      if (response.ok) {
+        alert(`ผู้ใช้ ${email} ถูกลบออกจากห้อง ${selectedRoom} เรียบร้อยแล้ว`);
+        fetchData(); // Refresh the data after deleting the room
+        handleCloseModalLeave();
+      } else {
+        console.error('Failed to remove user from room');
+      }
+    } catch (error) {
+      console.error('Error removing user from room:', error);
+    }
+  };
 
-
+  const copyRoom = async () => {
+    try {
+      const response = await fetch('/api/copy-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ originalRoomNumber:selectedRoom, userHost:email }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(`ได้คัดลอกห้อง ${selectedRoom} เรียบร้อยแล้ว | ห้องใหม่ : ${data.newRoomNumber}`);
+        fetchData(); // Refresh the data after deleting the room
+        handleCloseModalCopy();
+      } else {
+        console.error('Failed to remove user from room');
+        alert(`ไม่สามารถคัดลอกห้องได้: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error removing user from room:', error);
+      alert('เกิดข้อผิดพลาดในการคัดลอกห้อง กรุณาลองใหม่อีกครั้ง');
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -184,7 +245,7 @@ const Rooms = ({ email }) => {
         <div className='mt-10'>
        
           <Link className='text-red-500 hover:text-red-800' href="/api/logout">Logout</Link>
-        
+        {/* ลบห้อง */}
           {isModalOpenDelete && userHostRooms.length > 0 && (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div className="bg-white p-8 rounded-lg">
@@ -197,7 +258,7 @@ const Rooms = ({ email }) => {
         <option value="">เลือกห้อง</option>
         {userHostRooms.map(room => (
           <option key={room._id} value={room.roomNumber}>
-            {room.roomName || `ห้อง ${room.roomNumber}`}
+            {`${room.roomName} (${room.roomNumber})` || `ห้อง ${room.roomNumber}`}
           </option>
         ))}
       </select>
@@ -220,10 +281,82 @@ const Rooms = ({ email }) => {
     </div>
   </div>
 )}
+{/* ออกห้อง */}
+{isModalOpenLeave && userClientRooms.length > 0 && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-8 rounded-lg">
+      <h1 className="text-lg text-black font-bold mb-4">เลือกห้องเพื่อออกจากห้อง</h1>
+      <select
+        value={selectedRoom}
+        onChange={(e) => setSelectedRoom(e.target.value)}
+        className="border text-black bg-white border-gray-300 rounded px-4 py-2 w-full mb-4"
+      >
+        <option value="">เลือกห้อง</option>
+        {userClientRooms.map(room => (
+          <option key={room._id} value={room.roomNumber}>
+            {`${room.roomName} (${room.roomNumber})` || `ห้อง ${room.roomNumber}`}
+          </option>
+        ))}
+      </select>
+
+      <div className="flex justify-end">
+        <button
+          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 border-gray-600 hover:border-gray-800"
+          onClick={handleCloseModalLeave}
+        >
+          ยกเลิก
+        </button>
+        <button
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700"
+          onClick={removeUserFromRoom}
+          disabled={!selectedRoom}
+        >
+          ออกห้องเรียน
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+{/* คัดลอกห้องเรียน */}
+{isModalOpenCopy && userHostRooms.length > 0 && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-8 rounded-lg">
+      <h1 className="text-lg text-black font-bold mb-4">เลือกห้องเพื่อคัดลอกห้อง</h1>
+      <select
+        value={selectedRoom}
+        onChange={(e) => setSelectedRoom(e.target.value)}
+        className="border text-black bg-white border-gray-300 rounded px-4 py-2 w-full mb-4"
+      >
+        <option value="">เลือกห้อง</option>
+        {userHostRooms.map(room => (
+          <option key={room._id} value={room.roomNumber}>
+            {`${room.roomName} (${room.roomNumber})` || `ห้อง ${room.roomNumber}`}
+          </option>
+        ))}
+      </select>
+
+      <div className="flex justify-end">
+        <button
+          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 border-gray-600 hover:border-gray-800"
+          onClick={handleCloseModalCopy}
+        >
+          ยกเลิก
+        </button>
+        <button
+          className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-800 border-yellow-500 hover:border-yellow-700"
+          onClick={copyRoom}
+          disabled={!selectedRoom}
+        >
+          คัดลอกห้อง
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 
           <br />
-          {userRoomsCount < 8 ?(
+          {userRoomsCount < 12 ?(
             <>
              <h1 className='text-2xl mt-10'>Choose a Room</h1>
           <input className="text-xl mr-3 mt-3"
@@ -252,7 +385,8 @@ const Rooms = ({ email }) => {
 
           {userRoomsCount > 0 ? (
   <>
-    <h2 className='text-xl mt-10'>คุณเข้าร่วม {userRoomsCount}/8 ห้อง</h2>
+    <h2 className='text-xl mt-10'>คุณเข้าร่วม {userRoomsCount}/12 ห้อง</h2>
+    <button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700" onClick={handleOpenModalLeave}>ออกห้อง</button>
     <div className="flex flex-wrap justify-stretch mt-4">
       {userClientRooms.map(room => (
         <div key={room._id} className="w-1/4 p-2">
@@ -265,6 +399,7 @@ const Rooms = ({ email }) => {
         </div>
       ))}
     </div>
+
   </>
 ) : (
   <><h2 className='text-xl mt-6'>คุณไม่ได้เข้าร่วมห้องใด ๆ</h2></>
@@ -286,7 +421,7 @@ const Rooms = ({ email }) => {
          {userHostRoomsCount > 0 ? (
   <>
     <h2 className='text-2xl mt-10'>คุณมี {userHostRoomsCount}/12 ห้อง</h2>
-    
+    <button className="mt-4 mr-4 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-800 border-yellow-500 hover:border-yellow-700" onClick={handleOpenModalCopy}>คัดลอกห้อง</button>
     <button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700" onClick={handleOpenModalDelete}>ลบห้อง</button>
 
     <div className="flex flex-wrap justify-stretch mt-4">
@@ -363,6 +498,7 @@ const Rooms = ({ email }) => {
             </div>
           )}
 
+<br /><br />
         </div>
       ) : (
         <div>

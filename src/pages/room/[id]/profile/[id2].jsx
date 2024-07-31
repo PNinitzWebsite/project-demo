@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useRouter } from 'next/router';
 import { getCookie } from 'cookies-next';
 import clientPromise from '../../../../lib/mongodb';
@@ -68,7 +67,7 @@ const Profile = ({ user, email, roomNumber, users, host, totalScore }) => {
 };
 
 export async function getServerSideProps(context) {
-  const { id, id2 } = context.params; // `id2` is the `profileNumber`
+  const { id, id2 } = context.params;
   const req = context.req;
   const res = context.res;
   let email = getCookie('email', { req, res });
@@ -95,40 +94,36 @@ export async function getServerSideProps(context) {
     };
   }
 
+  let totalScore = 0;
   const answers = await db.collection("answers").findOne({ roomId: id });
-  if (!answers) {
-    return {
-      notFound: true,
-    };
+  if (answers) {
+    const scoreMap = Object.keys(answers).reduce((acc, key) => {
+      if (key !== '_id' && key !== 'roomId') {
+        Object.entries(answers[key]).forEach(([email, scoreInfo]) => {
+          if (typeof scoreInfo === 'object' && scoreInfo.score !== undefined) {
+            if (!acc[email]) acc[email] = 0;
+            acc[email] += scoreInfo.score;
+          }
+        });
+      }
+      return acc;
+    }, {});
+
+    const transformedEmail = user.email.replace(/\./g, '_');
+    totalScore = scoreMap[transformedEmail] || 0;
   }
-
-  // คำนวณ totalScore จากข้อมูลใน answers และ email
-  const scoreMap = Object.keys(answers).reduce((acc, key) => {
-    if (key !== '_id' && key !== 'roomId') { // กรองคีย์ที่ไม่ใช่คะแนน
-      Object.entries(answers[key]).forEach(([email, scoreInfo]) => {
-        // console.log("Processing email:", email, "scoreInfo:", scoreInfo);
-        if (typeof scoreInfo === 'object' && scoreInfo.score !== undefined) {
-          if (!acc[email]) acc[email] = 0;
-          acc[email] += scoreInfo.score;
-        }
-      });
-    }
-    return acc;
-  }, {});
-
-  const transformedEmail = user.email.replace(/\./g, '_'); // แปลง . เป็น _
-  const totalScore = scoreMap[transformedEmail] || 0;
 
   return {
     props: {
       user,
       email,
-      roomNumber: id, // ส่ง roomNumber ไปด้วย
-      users: room.users, // ส่ง users ไปด้วย
+      roomNumber: id,
+      users: room.users,
       host: room.userHost,
-      totalScore, // ส่ง totalScore ไปด้วย
+      totalScore,
     },
   };
 }
+
 
 export default Profile;

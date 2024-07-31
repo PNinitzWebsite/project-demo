@@ -69,39 +69,20 @@ export default async function handler(req, res) {
       // console.log('userAnswer:', userAnswer);
 
       if (userAnswer) {
-        const correct = parseCode(question.code);
-        const answer = parseCode(userAnswer.code);
-        const scores = question.variableScores || {};
-
-        let correctCount = 0;
-        let totalScore = 0;
-
-        Object.keys(correct).forEach(key => {
-          if (key in answer && correct[key] === answer[key]) {
-            correctCount++;
-            totalScore += scores[key] || 0;
-          }
-        });
-
         return res.status(200).json({ 
           submitted: true, 
           score: userAnswer.score,
-          correctCount: correctCount,
-          totalScore: totalScore,
-          totalQuestions: Object.keys(correct).length,
+          correctCount: userAnswer.correctCount,
+          totalScore: userAnswer.totalScore,
+          totalQuestions: userAnswer.totalQuestions,
           maxScore: userAnswer.totalScore || 0
         });
       } else {
         return res.status(302).json({ message: 'User answer not found' });
       }
     } else {
-      const correct = parseCode(question.code);
-      const scores = question.variableScores || {};
-
-      return res.status(200).json({ 
+      return res.status(303).json({ 
         submitted: false,
-        totalQuestions: Object.keys(correct).length,
-        maxScore: Object.values(scores).reduce((sum, value) => sum + value, 0)
       });
     }
   } catch (error) {

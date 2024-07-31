@@ -13,7 +13,7 @@ import Modal from 'react-modal';
 // ตั้งค่าการใช้ modal ในแอป
 Modal.setAppElement('#__next');
 
-const Room = ({ email ,users, initialQuestions }) => {
+const Room = ({ email ,users, initialQuestions,answers }) => {
   const router = useRouter();
   const { id } = router.query;
   const [room, setRoom] = useState(null);
@@ -177,9 +177,6 @@ const Room = ({ email ,users, initialQuestions }) => {
     reader.onload = async (event) => {
       const content = event.target.result;
       const extractedData = parseFileContent(content);
-      
-      // Get the current date in ISO format
-      const createdAt = new Date().toISOString();
   
       // Get the next exam number
       const newExamNumber = Object.keys(questions).length + 1;
@@ -196,8 +193,9 @@ const Room = ({ email ,users, initialQuestions }) => {
             exam: newExamNumber,
             detel: extractedData.detel,
             category: extractedData.category,
-            createdAt,
-            code: extractedData.code
+            code: extractedData.code,
+            testCase:extractedData.testCase,
+            expectedResults:extractedData.expectedResults
           }),
         });
   
@@ -214,7 +212,9 @@ const Room = ({ email ,users, initialQuestions }) => {
               category: extractedData.category,
               createdAt,
               isUse: false,
-              code: extractedData.code
+              code: extractedData.code,
+              testCase:extractedData.testCase,
+              expectedResults:extractedData.expectedResults
             }
           }));
           window.location.href = `${id}/exam/${newExamNumber}`;
@@ -234,26 +234,23 @@ const Room = ({ email ,users, initialQuestions }) => {
     const categoryMatch = content.match(/CATEGORY\s*=\s*{\s*"([^"]*)"\s*}/);
     const detelMatch = content.match(/DETEL\s*=\s*{\s*"([^"]*)"\s*}/);
     const codeMatch = content.match(/CODE\s*=\s*{\s*"([^"]*)"\s*}/);
+    const testCaseMatch = content.match(/TESTCASE\s*=\s*{\s*"([^"]*)"\s*}/);
+    const expectedResultsMatch = content.match(/EXPECTED_RESULTS\s*=\s*{\s*"([^"]*)"\s*}/);
   
     return {
       name: nameMatch ? nameMatch[1] : '',
       category: categoryMatch ? categoryMatch[1] : '',
       detel: detelMatch ? detelMatch[1] : '',
-      code: codeMatch ? codeMatch[1] : ''
+      code: codeMatch ? codeMatch[1] : '',
+      testCase: testCaseMatch ? testCaseMatch[1] : '',
+      expectedResults: expectedResultsMatch ? expectedResultsMatch[1] : ''
     };
-  };
-
-  const getThaiTimeISOString = () => {
-    const now = new Date();
-    const utcOffset = 7; // UTC+7 for Thailand
-    now.setHours(now.getHours() + utcOffset);
-    return now.toISOString();
   };
 
   const addQuestion = async () => {
     try {
       if(nameQuestions === ""){
-        alert("กรุณากรอกชื่อข้อสอบด้วย");
+        alert("กรุณากรอกชื่อโจทย์ด้วย");
         return;
       }
       if(categoryQuestions === ""){
@@ -263,9 +260,7 @@ const Room = ({ email ,users, initialQuestions }) => {
       if(deleteQuestion === ""){
         alert("กรุณากรอกรายละเอียดด้วย");
         return;
-      }
-      
-      const createdAt = getThaiTimeISOString();
+      } 
       
       const newExamNumber = Array.isArray(questions) ? questions.length + 1 : Object.keys(questions).length + 1;
       const response = await fetch('/api/add-question', {
@@ -279,8 +274,7 @@ const Room = ({ email ,users, initialQuestions }) => {
           exam: newExamNumber,
           detel: detelQuestions,
           category: categoryQuestions,
-          code:"",
-          createdAt
+          code:""
         }),
       });
   
@@ -348,12 +342,6 @@ const Room = ({ email ,users, initialQuestions }) => {
     const data = await response.json();
     if (data) {
       // Update the room state to reflect the new nickname
-      setRoom((prevRoom) => ({
-        ...prevRoom,
-        users: prevRoom.users.map(user => 
-          user.email === email ? { ...user, name: newNickname } : user
-        )
-      }));
       fetchRoomData();
     }
 
@@ -475,7 +463,7 @@ const Room = ({ email ,users, initialQuestions }) => {
                       {host === "host" ? (
                         // ของ Host
                         <>
-                          <center className='text-2xl bg-red-500 text-center uppercase'>Host</center>
+                          <center className='text-2xl bg-red-500 text-center uppercase'>Host</center>           
                           <nav>
                           <a className="mt-10 inline-block text-sm cursor-pointer text-gray-500 hover:text-red-500" onClick={() => openEditRoomNameModal()}>
                              แก้ไข</a>
@@ -483,8 +471,7 @@ const Room = ({ email ,users, initialQuestions }) => {
                           <h1 className="text-3xl mt-10">Welcome <span className={styles.greenText}>{email}</span> to Room
                           <span className={styles.yellowText}> {room.roomNumber}</span></h1>
                           </nav>
-                          
-
+{/* modal แก้ไขชื่อห้อง */}
     <Modal
       isOpen={isEditRoomNameModalOpen}
       onRequestClose={closeEditRoomNameModal}
@@ -504,6 +491,7 @@ const Room = ({ email ,users, initialQuestions }) => {
       <button className='mr-4' onClick={closeEditRoomNameModal}>Cancel</button>
     </Modal>
 
+{/*  ลบผู้ใช้ออกห้อง */}
     {isModalOpenRemoveUser && (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div className="bg-white p-8 rounded-lg">
@@ -525,13 +513,13 @@ const Room = ({ email ,users, initialQuestions }) => {
 
       <div className="flex justify-end">
         <button
-          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 border-gray-600 hover:border-gray-800"
           onClick={handleCloseModalRemoveUser}
         >
           ยกเลิก
         </button>
         <button
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800"
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-600 hover:border-red-800"
           onClick={removeUserFromRoom}
           disabled={!selectedUser}
         >
@@ -542,12 +530,9 @@ const Room = ({ email ,users, initialQuestions }) => {
   </div>
 )}
 
-<button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800" onClick={handleOpenModalRemoveUser}>ลบผู้ใช้ออกจากห้อง</button>
-
-  
-  
-                          <h1 className='mt-5'>Upload Python File</h1>
-<form onSubmit={uploadPython} className='my-6'>
+{/* อัพโหลดโจทย์ python */}
+<h1 className='mt-5'>Upload Python File</h1>
+<form onSubmit={uploadPython} className='mt-6'>
   <input
     required
     type="file"
@@ -558,48 +543,7 @@ const Room = ({ email ,users, initialQuestions }) => {
   <button className='mt-5' type="submit">Upload</button>
 </form>
   
-                          <div>
-  {Object.keys(questions).length > 0 ? (
-    Array.from(new Set(Object.values(questions).map(question => question.category)))
-      .sort((a, b) => {
-        const latestA = Math.max(...Object.values(questions)
-          .filter(q => q.category === a)
-          .map(q => new Date(q.createdAt).getTime()));
-        const latestB = Math.max(...Object.values(questions)
-          .filter(q => q.category === b)
-          .map(q => new Date(q.createdAt).getTime()));
-        return latestB - latestA; // เรียงจากใหม่ไปเก่า
-      })
-      .map((category, index) => (
-        <div key={index}>
-          <h1 className='mt-10 mb-8 text-xl items-center'>
-            <a className="text-sm cursor-pointer text-gray-500 hover:text-red-500" onClick={() => handleOpenEditModal(category)}>
-              แก้ไข
-            </a>
-            <br />
-            <span>{category}</span>
-            <span> - {Object.values(questions).find(q => q.category === category)?.isUse ? "แสดง" : "ซ่อน"}</span>
-          </h1>
-          {Object.values(questions)
-            .filter(question => question.category === category)
-            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // เรียงคำถามในหมวดหมู่จากใหม่ไปเก่า
-            .map((question, qIndex) => (
-              <button className='mx-1' key={qIndex} onClick={() => openModal(question)}>
-                {question.name || `ข้อสอบ ${qIndex + 1}`}
-              </button>
-            ))
-          }
-        </div>
-      ))
-  ) : (
-    ""
-  )}
-</div>
-
-                          <br />
-
-
-{/* Modal for editing category */}
+{/* Modal แก้ไขชื่อหมวดหมู่และซ่อน/แสดง */}
 <Modal isOpen={modalEditOpen} onRequestClose={handleCloseEditModal}
  overlayClassName={styles.ReactModal__Overlay}
  className={styles.ReactModal__Content}>
@@ -619,45 +563,41 @@ const Room = ({ email ,users, initialQuestions }) => {
     </div>
   )}
 </Modal>
-
-
-                      
-
-
+{/* modal ย้ายหมวดหมู่ */}
                           <Modal isOpen={modalIsOpen} onRequestClose={closeModal}
                           overlayClassName={styles.ReactModal__Overlay}
                           className={styles.ReactModal__Content}
                           >
                             <h2 className='mb-3'>{selectedExam?.name}</h2><hr />
                             <p className='mt-3 mb-5'>{selectedExam?.detel}</p><hr />
-                            <button className='mt-4 mr-3' onClick={startExam}>แก้ไขข้อสอบ</button>
+                            <button className='mt-4 mr-3' onClick={startExam}>แก้ไขโจทย์</button>
                             <button onClick={closeModal}>ปิด</button>
                           </Modal>
   
                             <br />
                             <div className="flex justify-center space-x-2">
-                              <button onClick={handleAddQestion}>เพิ่มข้อสอบ</button>
+                              <button onClick={handleAddQestion}>เพิ่มโจทย์</button>
                               {Object.keys(questions).length > 0 && (
                                 <>
-                                  <button onClick={handleDeleteQestion}>ลบข้อสอบ</button>
+                                  <button onClick={handleDeleteQestion}>ลบโจทย์</button>
                                   <button onClick={() => setIsMovingCategory(true)}>ย้ายหมวดหมู่</button>
                                 </>
                               )}
                             </div>
-
-                          {isMovingCategory && hasQuestions && (
+{/* ย้ายหมวดหมู่ */}
+{isMovingCategory && hasQuestions && (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div className="bg-white p-8 rounded-lg">
-      <h1 className="text-lg text-black font-bold mb-4">เลือกข้อสอบเพื่อย้ายหมวดหมู่</h1>
+      <h1 className="text-lg text-black font-bold mb-4">เลือกโจทย์เพื่อย้ายหมวดหมู่</h1>
       <select
         value={selectedExam}
         onChange={(e) => setSelectedExam(e.target.value)}
         className="border text-black bg-white border-gray-300 rounded px-4 py-2 w-full mb-4"
       >
-        <option value="">เลือกข้อสอบ</option>
+        <option value="">เลือกโจทย์</option>
         {Object.entries(questions).map(([key, question]) => (
           <option key={key} value={key}>
-            {question.name || `ข้อสอบ ${key}`}
+            {question.name || `โจทย์ ${key}`}
           </option>
         ))}
       </select>
@@ -688,21 +628,20 @@ const Room = ({ email ,users, initialQuestions }) => {
     </div>
   </div>
 )}
-  
-  
-                          {isModalOpenDelete && hasQuestions && (
+  {/* ลบโจทย์ */}
+{isModalOpenDelete && hasQuestions && (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div className="bg-white p-8 rounded-lg">
-      <h1 className="text-lg text-black font-bold mb-4">เลือกข้อสอบเพื่อลบ</h1>
+      <h1 className="text-lg text-black font-bold mb-4">เลือกโจทย์เพื่อลบ</h1>
       <select
         value={selectedExam}
         onChange={(e) => setSelectedExam(e.target.value)}
         className="border text-black bg-white border-gray-300 rounded px-4 py-2 w-full mb-4"
       >
-        <option value="">เลือกข้อสอบ</option>
+        <option value="">เลือกโจทย์</option>
         {Object.entries(questions).map(([key, question]) => (
           <option key={key} value={key}>
-            {question.name || `ข้อสอบ ${key}`}
+            {question.name || `โจทย์ ${key}`}
           </option>
         ))}
       </select>
@@ -719,18 +658,18 @@ const Room = ({ email ,users, initialQuestions }) => {
           onClick={deleteQuestion}
           disabled={!selectedExam}
         >
-          ลบข้อสอบ
+          ลบโจทย์
         </button>
       </div>
     </div>
   </div>
 )}
                          <br />
-  
-                         {isModalOpen && (
+  {/* เพิ่มโจทย์ */}
+{isModalOpen && (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white p-10 rounded-lg w-full max-w-[500px]">
-        <h1 className="text-lg text-black font-bold mb-4">ชื่อข้อสอบ</h1>
+        <h1 className="text-lg text-black font-bold mb-4">ชื่อโจทย์</h1>
         <input required
           type="text"
           value={nameQuestions}
@@ -745,21 +684,21 @@ const Room = ({ email ,users, initialQuestions }) => {
           onBlur={(e) => {
             const inputText = e.target.value.trim();
             if (inputText.length === 0) {
-              setNameQuestions(`ข้อสอบ ${Object.keys(questions).length > 0 ? Object.keys(questions).length+1 : 1}`);
+              setNameQuestions(`โจทย์ ${Object.keys(questions).length > 0 ? Object.keys(questions).length+1 : 1}`);
             }
           }}
           className="border text-black bg-black border-gray-300 rounded px-4 py-2 w-full mb-4"
-          placeholder="ชื่อข้อสอบ เช่น ข้อสอบ 1"
+          placeholder="ชื่อโจทย์ เช่น โจทย์ 1"
         /> 
-        <h1 className="text-sm text-black font-bold mb-4">หมวดหมู่ข้อสอบ:</h1>
+        <h1 className="text-sm text-black font-bold mb-4">หมวดหมู่โจทย์:</h1>
         <input  className="border text-black bg-black border-gray-300 rounded px-4 py-2 w-full mb-4"
-         required type="text" value={categoryQuestions} placeholder="หมวดหมู่ข้อสอบ เช่น หมวดหมู่ 1"
+         required type="text" value={categoryQuestions} placeholder="หมวดหมู่โจทย์ เช่น หมวดหมู่ 1"
          onChange={(e) => {
           const inputText = e.target.value;
           if (inputText.length <= 30) {
             setCategoryQuestions(inputText);
           } else {
-            alert('หมวดหมู่ข้อสอบต้องมีไม่เกิน 30 ตัวอักษร');
+            alert('หมวดหมู่โจทย์ต้องมีไม่เกิน 30 ตัวอักษร');
           }
         }}
         onBlur={(e) => {
@@ -769,7 +708,7 @@ const Room = ({ email ,users, initialQuestions }) => {
           }
         }} />
 
-        <h1 className="text-sm text-black font-bold mb-4">รายละเอียดข้อสอบ:</h1>
+        <h1 className="text-sm text-black font-bold mb-4">รายละเอียดโจทย์:</h1>
         <textarea required
           type="text"
           rows={5}
@@ -779,50 +718,89 @@ const Room = ({ email ,users, initialQuestions }) => {
             if (inputText.length <= 500) {
               setDetelQuestions(inputText);
             } else {
-              alert('รายละเอียดข้อสอบต้องมีไม่เกิน 500 ตัวอักษร');
+              alert('รายละเอียดโจทย์ต้องมีไม่เกิน 500 ตัวอักษร');
             }
           }}
           onBlur={(e) => {
             const inputText = e.target.value.trim();
             if (inputText.length === 0) {
-              setDetelQuestions(`รายละเอียดข้อสอบ ${Object.keys(questions).length > 0 ? Object.keys(questions).length+1 : 1}`);
+              setDetelQuestions(`รายละเอียดโจทย์ ${Object.keys(questions).length > 0 ? Object.keys(questions).length+1 : 1}`);
             }
           }}
           className=" border text-black bg-white border-green-500 rounded px-4 py-2 w-full mb-4"
-          placeholder="รายละเอียดข้อสอบ เช่น รายละเอียดข้อสอบ 1"
+          placeholder="รายละเอียดโจทย์ เช่น รายละเอียดโจทย์ 1"
         />
   
         <div className="flex justify-center">
           <button className="mr-4 bg-gray-700 px-4 py-2 rounded hover:bg-red-800" onClick={handleCloseModal}>ยกเลิก</button>
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={addQuestion}>เพิ่มข้อสอบ</button>
+          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={addQuestion}>เพิ่มโจทย์</button>
         </div>
       </div>
     </div>
   )}
-  
-  {Object.keys(questions).length > 0 ?
+
+  {/* เช็กตรวจโจทย์ */}
+  {answers["1"] ?
   (<>
   <div className="flex justify-center">
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={checkExam}>ตรวจข้อสอบ</button>
+          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={checkExam}>ตรวจโจทย์</button>
   </div>
   </>):""}
   
-  
+  {/* โจทย์ทั้งหมด */}
+  <div>
+  {Object.keys(questions).length > 0 ? (
+    Array.from(new Set(Object.values(questions).map(question => question.category)))
+      .sort((a, b) => {
+        const latestA = Math.max(...Object.values(questions)
+          .filter(q => q.category === a)
+          .map(q => new Date(q.createdAt).getTime()));
+        const latestB = Math.max(...Object.values(questions)
+          .filter(q => q.category === b)
+          .map(q => new Date(q.createdAt).getTime()));
+        return latestB - latestA; // เรียงจากใหม่ไปเก่า
+      })
+      .map((category, index) => (
+        <div key={index}>
+          <h1 className='mt-10 mb-8 text-xl items-center'>
+            <a className="text-sm cursor-pointer text-gray-500 hover:text-red-500" onClick={() => handleOpenEditModal(category)}>
+              แก้ไข
+            </a>
+            <br />
+            <span>{category}</span>
+            <span> - {Object.values(questions).find(q => q.category === category)?.isUse ? "แสดง" : "ซ่อน"}</span>
+          </h1>
+          {Object.values(questions)
+            .filter(question => question.category === category)
+            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // เรียงคำถามในหมวดหมู่จากใหม่ไปเก่า
+            .map((question, qIndex) => (
+              <button className='mx-1' key={qIndex} onClick={() => openModal(question)}>
+                {question.name || `โจทย์ ${qIndex + 1}`}
+              </button>
+            ))
+          }
+        </div>
+      ))
+  ) : (
+    ""
+  )}
+</div>
+
   <br />
- 
-  <h2 className='text-2xl'>เลขข้อสอบและเฉลย</h2>
+ {/* เลขโจทย์และเฉลย */}
+  <h2 className='text-2xl'>เลขโจทย์และเฉลย</h2>
 {(Array.isArray(questions) ? questions.length > 0 : Object.keys(questions).length > 0) ? (
   <div>
     {(Array.isArray(questions) ? questions : Object.values(questions)).map((question, index) => (
-      <p key={index}>{index + 1}. {question.question || "ไม่มีเฉลย"}</p>
+      <p key={index}>{index + 1}. {question.code || "ไม่มีเฉลย"}</p>
     ))}
   </div>
 ) : (
-  <p>ไม่มีเลขข้อสอบและเฉลย</p>
+  <p>ไม่มีเลขโจทย์และเฉลย</p>
 )}
 
 <br />
-{/* เพิ่ม name */}
+{/* แก้ไขชื่อเล่น */}
 <button onClick={handleEditNickname} className=' inline-block hover:text-green-500'>
                               แก้ไขชื่อเล่น
                             </button>
@@ -832,7 +810,10 @@ const Room = ({ email ,users, initialQuestions }) => {
                             onSave={handleSaveNickname}
                             initialNickname={nickname}
                           />
-
+                          <br />
+{answers["1"] ? 
+<button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-800" onClick={handleOpenModalRemoveUser}>ลบผู้ใช้ออกจากห้อง</button>
+:""}
 <h1 className="text-2xl mt-5">มีใครบ้าง :</h1>
                     <ul className='mt-3'><li className="text-red-500 text-lg">{room.hostName} (HOST)</li></ul>
                     {room.scores ? (
@@ -906,7 +887,7 @@ const Room = ({ email ,users, initialQuestions }) => {
             .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // เรียงคำถามในหมวดหมู่จากใหม่ไปเก่า
             .map((question, qIndex) => (
               <button className='mx-1' key={qIndex} onClick={() => openModal(question)}>
-                {question.name || `ข้อสอบ ${qIndex + 1}`}
+                {question.name || `โจทย์ ${qIndex + 1}`}
               </button>
             ))
           }
@@ -928,7 +909,7 @@ const Room = ({ email ,users, initialQuestions }) => {
   <p className='mt-3 mb-5'>{selectedExam?.detel}</p>
   <hr />
   <button className='mt-4 mr-3' onClick={() => router.push(`${id}/exam/${selectedExam?.exam}`)}>
-    เริ่มทำข้อสอบ
+    เริ่มทำโจทย์
   </button>
   <button onClick={closeModal}>ปิด</button>
 </Modal>
@@ -1017,6 +998,28 @@ export async function getServerSideProps(context) {
       notFound: true,
     };
   }
+  const answer = await db.collection("answers").findOne({ roomId: id });
+  
+  function convertDatesToStrings(obj) {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+  
+    if (obj instanceof Date) {
+      return obj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+    }
+  
+    if (Array.isArray(obj)) {
+      return obj.map(convertDatesToStrings);
+    }
+  
+    return Object.keys(obj).reduce((acc, key) => {
+      acc[key] = convertDatesToStrings(obj[key]);
+      return acc;
+    }, {});
+  }
+  // Convert Date objects to strings
+  const serializedAnswers = convertDatesToStrings(answer);
   // Ensure users is an array or null
   const users = room.users || null;
   // console.log("Initial questions data:", room.questions);
@@ -1026,7 +1029,7 @@ export async function getServerSideProps(context) {
       roomNumber: id, // ส่ง roomNumber ไปด้วย
       users,
       initialQuestions: room.questions || {},  
-      
+      answers:serializedAnswers || {}
     },
   };
 }

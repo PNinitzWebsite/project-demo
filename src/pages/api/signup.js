@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       return;
     }
     const password_hash = createHash('sha256').update(password).digest('hex');
-    const currentDate = new Date().toUTCString();
+    const currentDate = new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
     const bodyObject = {
       Email: email,
       Password: password_hash,

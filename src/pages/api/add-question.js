@@ -5,11 +5,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { roomId, name, exam, detel, category, createdAt, code } = req.body;
+  const { roomId, name, exam, detel, category, code, testCase, expectedResults } = req.body;
+
+  // Use let instead of const for variables that might need reassignment
+  let finalCode = code || "";
+  let finalTestCase = testCase || "";
+  let finalExpectedResults = expectedResults || "";
+
+  // If any of them is empty, set all to ""
+  if (!finalCode || !finalTestCase || !finalExpectedResults) {
+    finalCode = finalTestCase = finalExpectedResults = "";
+  }
 
   try {
     const client = await clientPromise;
     const db = client.db('test');
+    const currentDate = new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
 
     const result = await db.collection('rooms').updateOne(
       { roomNumber: roomId },
@@ -20,9 +31,11 @@ export default async function handler(req, res) {
             name,
             detel,
             category,
-            createdAt,
+            createdAt: currentDate,
             isUse: false,
-            code: code || ""
+            code: finalCode,
+            testCase: finalTestCase,
+            expectedResults: finalExpectedResults,
           }
         }
       },

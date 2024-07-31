@@ -4,7 +4,7 @@ import clientPromise from '../../lib/mongodb';
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { code, roomId, question, exam, variableScores } = req.body;
+      const { code, roomId, testCases,expectedResults, exam, variableScores } = req.body;
       const client = await clientPromise;
       const db = client.db("test");
 
@@ -12,7 +12,8 @@ export default async function handler(req, res) {
         { roomNumber: roomId, "questions.exam": String(exam) },
         { 
           $set: { 
-            "questions.$.question": question,
+            "questions.$.testCase": testCases,
+            "questions.$.expectedResults": expectedResults,
             "questions.$.code": code,
             "questions.$.variableScores": variableScores
           } 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import Leaderboard from '../../../components/Leaderboard';
 import Layout from '@/components/layout';
 import { getCookie } from 'cookies-next';

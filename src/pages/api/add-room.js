@@ -34,6 +34,7 @@ export default async function handler(req, res) {
       
 
     const result = await roomsCollection.insertOne(insertedRoom);
+    const currentDate = new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
 
     const responseJson = {
       message: 'Room added successfully',
@@ -41,7 +42,7 @@ export default async function handler(req, res) {
       userHost: insertedRoom.userHost,
       roomName:insertedRoom.roomName,
       hostName:insertedRoom.hostName,
-      create: new Date().toUTCString()
+      Created: currentDate
     };
 
     return res.status(201).json(responseJson);

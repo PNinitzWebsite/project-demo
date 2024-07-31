@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { roomId, name, exam ,detel,category,createdAt } = req.body;
+  const { roomId, name, exam ,detel,category } = req.body;
 
     try {
       const client = await clientPromise;
@@ -16,6 +16,7 @@ export default async function handler(req, res) {
 
       // Use the $set operator to update a specific element in the questions array
       const updateField = `questions.${exam - 1}`;
+      const currentDate = new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
       const result = await db.collection('rooms').updateOne(
         { roomNumber: roomId },
         { 
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
               name,
               detel,
               category,
-              createdAt,
+              createdAt:currentDate,
               isUse:false
             }
           }
