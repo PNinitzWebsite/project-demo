@@ -1,6 +1,6 @@
 import { JWT } from 'google-auth-library';
 import fetch from 'node-fetch';
-import serviceAccount from '../../../service-account.json'; // Adjust the path if necessary
+import serviceAccount from '../../../secret.json'; // Adjust the path if necessary
 
 async function getAccessToken() {
   const client = new JWT({
