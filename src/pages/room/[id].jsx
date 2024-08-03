@@ -740,12 +740,9 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
   )}
 
   {/* เช็กตรวจโจทย์ */}
-  {answers["1"] ?
-  (<>
   <div className="flex justify-center">
           <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={checkExam}>ตรวจโจทย์</button>
   </div>
-  </>):""}
   
   {/* โจทย์ทั้งหมด */}
   <div>

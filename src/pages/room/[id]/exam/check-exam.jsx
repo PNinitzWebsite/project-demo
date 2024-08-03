@@ -294,39 +294,36 @@ export async function getServerSideProps(context) {
   const users = room.users || null;
 
   const answers = await db.collection('answers').findOne({ roomId: id });
-  if (!answers) {
-    return {
-      notFound: true,
-    };
-  }
-
+  
   const scoreMap = {};
   const allAnswers = [];
 
-  Object.keys(answers).forEach(key => {
-    if (key !== '_id' && key !== 'roomId') {
-      Object.entries(answers[key]).forEach(([email, scoreInfo]) => {
-        if (typeof scoreInfo === 'object' && scoreInfo.score !== undefined) {
-          if (!scoreMap[email]) scoreMap[email] = 0;
-          scoreMap[email] += scoreInfo.score;
+  if (answers) {
+    Object.keys(answers).forEach(key => {
+      if (key !== '_id' && key !== 'roomId') {
+        Object.entries(answers[key]).forEach(([email, scoreInfo]) => {
+          if (typeof scoreInfo === 'object' && scoreInfo.score !== undefined) {
+            if (!scoreMap[email]) scoreMap[email] = 0;
+            scoreMap[email] += scoreInfo.score;
 
-          allAnswers.push({
-            question: key,
-            email: email,
-            answer: scoreInfo.answer,
-            score: scoreInfo.score,
-            code: scoreInfo.code,
-            totalScore: scoreInfo.totalScore,
-            correctCount: scoreInfo.correctCount,
-            totalQuestions: scoreInfo.totalQuestions,
-            submittedAt: scoreInfo.submittedAt,
-            checked: scoreInfo.checked || false,
-            uniqueId: `${key}-${email}`
-          });
-        }
-      });
-    }
-  });
+            allAnswers.push({
+              question: key,
+              email: email,
+              answer: scoreInfo.answer,
+              score: scoreInfo.score,
+              code: scoreInfo.code,
+              totalScore: scoreInfo.totalScore,
+              correctCount: scoreInfo.correctCount,
+              totalQuestions: scoreInfo.totalQuestions,
+              submittedAt: scoreInfo.submittedAt,
+              checked: scoreInfo.checked || false,
+              uniqueId: `${key}-${email}`
+            });
+          }
+        });
+      }
+    });
+  }
 
   return {
     props: {
@@ -339,5 +336,6 @@ export async function getServerSideProps(context) {
     },
   };
 }
+
 
 export default CheckExam;
