@@ -72,7 +72,7 @@ const Leaderboard = ({ data, scores }) => {
 
   return (
     <div className={styles.container}>
-      <h1 className='text-2xl p-5'>Leaderboard</h1>
+      <h1 className='text-2xl p-5 font-text'>Leaderboard</h1>
       <div className={styles.topThree}>
         {sortedData.slice(0, 3).map((item, index) => (
           <div key={item.email} className={styles.topBox}>

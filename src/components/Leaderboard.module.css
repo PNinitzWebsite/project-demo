@@ -1,20 +1,20 @@
 /* components/Leaderboard.module.css */
 .link {
     text-decoration: none;
-    color: black !important;
+    color: var(--font-color) !important;
 }
 .link:hover {
     text-decoration: none;
-    color: green !important;
+    color: var(--dark-accent) !important;
 }
 
 .topLink {
     text-decoration: none;
-    color: white !important;
+    color: var(--button-text-color) !important;
 }
 .topLink:hover {
     text-decoration: none;
-    color: black !important;
+    color: var(--input-text-color) !important;
 }
 
 .container {
@@ -22,7 +22,6 @@
     font-family: Arial, sans-serif;
     max-width: 1200px;
     margin: auto;
-    color: #fff; /* ตัวอักษรสีขาว */
 }
 
 .topThree {
@@ -32,8 +31,8 @@
 }
 
 .topBox {
-    background-color: #4caf50;
-    color: #fff;
+    background-color: var(--secondary-hover-bg-color);
+    color: var(--button-text-color);
     padding: 20px;
     border-radius: 10px;
     text-align: center;
@@ -44,20 +43,20 @@
 .topBox h2 {
     margin: 0;
     font-size: 1.5em;
-    text-shadow: 1px 1px 2px #000; /* เงาของตัวอักษร */
+    text-shadow: 1px 1px 2px var(--input-text-color); /* เงาของตัวอักษร */
 }
 
 .topBox p {
     margin: 5px 0;
     font-size: 1.2em;
-    text-shadow: 1px 1px 2px #000; /* เงาของตัวอักษร */
+    text-shadow: 1px 1px 2px var(--input-text-color); /* เงาของตัวอักษร */
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    background-color: #fff; /* พื้นหลังของตารางเป็นสีขาว */
+    background-color: var(--button-text-color); /* พื้นหลังของตารางเป็นสีขาว */
 }
 
 .table th, .table td {

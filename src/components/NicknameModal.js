@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import styles from './NicknameModal.module.css';
 
 const NicknameModal = ({ show, onClose, onSave, initialNickname }) => {
   const [nickname, setNickname] = useState(initialNickname);
@@ -26,10 +25,9 @@ const NicknameModal = ({ show, onClose, onSave, initialNickname }) => {
   }
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modal}>
+    <div className="modal-overlay">
+      <div className="modal-container">
         <h2 className="text-xl">Edit Nickname</h2>
-        <p className={styles.currentNickname}>Current Nickname: {initialNickname}</p>
         <input
           type="text"
           value={nickname}
@@ -38,14 +36,14 @@ const NicknameModal = ({ show, onClose, onSave, initialNickname }) => {
               setNickname(e.target.value);
             }
           }}
-          className={styles.input}
+          className="input my-5"
         />
-        {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
-        <div className={styles.buttons}>
-          <button onClick={onClose} className={styles.buttonred}>
+        {errorMessage && <p className="error-text">{errorMessage}</p>}
+        <div className=' space-x-2'>
+          <button onClick={onClose} className="btn-gray">
             Cancel
           </button>
-          <button onClick={handleSave} className={styles.button}>
+          <button onClick={handleSave} className="btn-secondary">
             Save
           </button>
         </div>

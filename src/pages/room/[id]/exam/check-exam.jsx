@@ -126,27 +126,26 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
   const questions = [...new Set(allAnswers.map(item => item.question))];
 
   return (
-    <Layout>
+    <Layout pageTitle={`Check Exam Room : ${id}`}>
       {loading ? (
         <Loading />
       ) : (
         <>
-          {host === 'host' ? (
-            <div className="container mx-auto px-4 py-8 text-black">
-              <button className="mb-8 bg-green-500 hover:bg-red-500 hover:border-red-700 text-white font-bold py-2 px-4 rounded" onClick={handleExit}>
-                Exit
-              </button>
-
+          {host === 'host' ? (<>
+            <nav className='my-5'>
+              <button className='text-sm btn-gray' onClick={handleExit}>Go to room</button>      
+            </nav>
+            <div className="container mx-auto px-4 pb-8 pt-2 font-text">
               <div className="mb-8">
-                <h2 className="text-3xl font-bold mb-6 text-center text-white">Select Question</h2>
+                <h2 className="text-3xl font-medium mb-6 text-center font-text">Select Question</h2>
                 <div className="flex flex-wrap gap-4 justify-center">
                   {questions.length === 0 ? (
-                    <h2 className="text-xl font-bold mb-6 text-center text-white">ไม่มีคำตอบ</h2>
+                    <h2 className="text-xl font-medium mb-6 text-center font-text">ไม่มีคำตอบ</h2>
                   ) : (
                     questions.map((question,q) => (
                       <button
                         key={question}
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        className="btn-primary"
                         onClick={() => setSelectedQuestion(question)}
                       >
                         {initialQuestions[initialQuestions.length-1].name}
@@ -160,7 +159,7 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
                 <>
                   <div className="mb-4 text-center">
                     <button
-                      className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+                      className="btn-alert"
                       onClick={() => handleResetAnswers(selectedQuestion)}
                     >
                       Reset All Answers for Selected {initialQuestions[initialQuestions.length-1].name}
@@ -169,7 +168,7 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
                   </div>
                   <div className="mb-4 text-center">
                     <button
-                      className="mb-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                      className="mb-4 btn-error"
                       onClick={() => handleDeleteAllAnswers(selectedQuestion)}
                     >
                       Delete All Answers for Selected {initialQuestions[initialQuestions.length-1].name}
@@ -177,28 +176,28 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
                   </div>
                  
 
-                  <h2 className="text-3xl font-bold mb-6 text-center text-white">
+                  <h2 className="text-3xl font-medium mb-6 text-center font-text">
                     {uncheckedAnswers.length <= 0 ? 'Unchecked Answers' : `Unchecked Answers for ${initialQuestions[initialQuestions.length-1].name}`}
                   </h2>
 
                   {uncheckedAnswers.length <= 0 ? (
-                    <h2 className="text-xl font-bold mb-6 text-center text-white">ยังไม่มีคำตอบใหม่</h2>
+                    <h2 className="text-xl font-medium mb-6 text-center font-text">ยังไม่มีคำตอบใหม่</h2>
                   ) : (
                     <div className="space-y-6">
                       {uncheckedAnswers.map((item) => (
                         <div key={item.uniqueId} className="bg-gray-100 shadow-lg rounded-lg p-6">
-                          <h3 className="text-2xl font-semibold mb-4 text-center">โจทย์ {item.question} | {item.question.length}</h3>
+                          <h3 className="text-2xl font-semimedium mb-4 text-center"> {initialQuestions[initialQuestions.length-1].name} | {item.email.replace(/_([a-zA-Z])/g, '.$1')}</h3>
                           <div className="space-y-2">
-                            <p className="text-lg"><span className="font-medium">Email:</span> {item.email.replace('_', '.')}</p>
+                            <p className="text-lg"><span className="font-medium">Email:</span> {item.email.replace(/_([a-zA-Z])/g, '.$1')}</p>
                             <p className="text-lg"><span className="font-medium">Submitted At:</span> {item.submittedAt}</p>
                             <pre className="text-lg"><span className="font-medium">Code:</span> {item.code}</pre>
-                            <p className={`text-lg font-bold ${item.score === item.totalScore ? 'text-green-500' : 'text-red-500'}`}>
+                            <p className={`text-lg font-medium ${item.score === item.totalScore ? 'success-text' : 'error-text'}`}>
                               Score: {item.score}/{item.totalScore} <br />
                               Correct: {item.correctCount}/{item.totalQuestions}
                             </p>
                           </div>
                           <button
-                            className="mt-4 w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                            className="mt-4 w-full btn-secondary"
                             onClick={() => handleCheckAnswer(item.question, item.email, item.uniqueId)}
                           >
                             Mark as Checked
@@ -210,29 +209,29 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
 
                   <br />
 
-                  <h2 className="text-3xl font-bold mb-6 text-center text-white">
+                  <h2 className="text-3xl font-medium mb-6 text-center font-text">
                     {checkedAnswers.length <= 0 ? 'Checked Answers' : `Checked Answers for ${initialQuestions[initialQuestions.length-1].name}`}
                   </h2>
 
                   {checkedAnswers.length <= 0 ? (
-                    <h2 className="text-xl font-bold mb-6 text-center text-white">ยังไม่ได้ตรวจสอบ</h2>
+                    <h2 className="text-xl font-medium mb-6 text-center font-texte">ยังไม่ได้ตรวจสอบ</h2>
                   ) : (
                     <div className="space-y-6">
                       {checkedAnswers.map((item) => (
                         <div key={item.uniqueId} className="bg-white shadow-lg rounded-lg p-6">
-                          <h3 className="text-2xl font-semibold mb-4 text-center">โจทย์ {item.question} | {item.question.length}</h3>
+                          <h3 className="text-2xl font-semimedium mb-4 text-center"> {initialQuestions[initialQuestions.length-1].name} | {item.email.replace(/_([a-zA-Z])/g, '.$1')}</h3>
                           <div className="space-y-2">
-                            <p className="text-lg"><span className="font-medium">Email:</span> {item.email.replace('_', '.')}</p>
+                            <p className="text-lg"><span className="font-medium">Email:</span> {item.email.replace(/_([a-zA-Z])/g, '.$1')}</p>
                             <p className="text-lg"><span className="font-medium">Submitted At:</span> {item.submittedAt}</p>
-                            <p className="text-lg"><span className="font-medium">Code:</span> {item.code}</p>
-                            <p className={`text-lg font-bold ${item.score === item.totalScore ? 'text-green-500' : 'text-red-500'}`}>
+                            <pre className="text-lg"><span className="font-medium">Code:</span> {item.code}</pre>
+                            <p className={`text-lg font-medium ${item.score === item.totalScore ? 'success-text' : 'error-text'}`}>
                               Score: {item.score}/{item.totalScore} <br />
                               Correct: {item.correctCount}/{item.totalQuestions}
                             </p>
-                            <p className="text-lg text-green-500 font-medium"><strong>Status: Checked</strong></p>
+                            <p className="text-lg success-text font-medium"><strong>Status: Checked</strong></p>
                           </div>
                           <button
-                            className="mt-4 w-full bg-red-500 hover:bg-red-700 border-red-500 hover:border-red-700 text-white font-bold py-2 px-4 rounded"
+                            className="mt-4 w-full btn-error"
                             onClick={() => handleCheckAnswer(item.question, item.email, item.uniqueId, rules)}
                           >
                             Delete Question
@@ -244,7 +243,7 @@ const CheckExam = ({ email, roomNumber, users, initialQuestions, totalScore, all
                 </>
               )}
             </div>
-          ) : (
+            </>) : (
             <>
               {email ? (
                 <>

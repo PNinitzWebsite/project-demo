@@ -196,9 +196,6 @@ const Rooms = ({ email }) => {
     setIsModalOpen(false);
   };
 
-  
-  
-
   const handleSubmitRoom = async () => {
     try {
       if(isModalOpen && hostName.length <= 0){
@@ -239,16 +236,18 @@ const Rooms = ({ email }) => {
         <Loading/>
       ):(
         <>
-        </>
-      )}
-      {email ? (
-        <div className='mt-10'>
-       
-          <Link className='text-red-500 hover:text-red-800' href="/api/logout">Logout</Link>
+        {email ? (
+        <div className='mt-6'>
+          <Link href="/api/logout">
+            <button class="mx-auto btn-logout">
+              <div class="sign-logout"><svg viewBox="0 0 512 512"><path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path></svg></div>
+              <div class="text-logout">Logout</div>
+            </button>
+          </Link>
         {/* ลบห้อง */}
           {isModalOpenDelete && userHostRooms.length > 0 && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-8 rounded-lg">
+  <div className="modal-overlay">
+    <div className="modal-container">
       <h1 className="text-lg text-black font-bold mb-4">เลือกห้องเพื่อลบ</h1>
       <select
         value={selectedRoom}
@@ -265,13 +264,13 @@ const Rooms = ({ email }) => {
 
       <div className="flex justify-end">
         <button
-          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 border-gray-600 hover:border-gray-800"
+          className="mr-4 btn-gray"
           onClick={handleCloseModalDelete}
         >
           ยกเลิก
         </button>
         <button
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700"
+          className="btn-error"
           onClick={deleteRoom}
           disabled={!selectedRoom}
         >
@@ -283,8 +282,8 @@ const Rooms = ({ email }) => {
 )}
 {/* ออกห้อง */}
 {isModalOpenLeave && userClientRooms.length > 0 && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-8 rounded-lg">
+  <div className="modal-overlay">
+    <div className="modal-container">
       <h1 className="text-lg text-black font-bold mb-4">เลือกห้องเพื่อออกจากห้อง</h1>
       <select
         value={selectedRoom}
@@ -301,13 +300,13 @@ const Rooms = ({ email }) => {
 
       <div className="flex justify-end">
         <button
-          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 border-gray-600 hover:border-gray-800"
+          className="mr-4 btn-gray"
           onClick={handleCloseModalLeave}
         >
           ยกเลิก
         </button>
         <button
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700"
+          className="btn-error"
           onClick={removeUserFromRoom}
           disabled={!selectedRoom}
         >
@@ -319,8 +318,8 @@ const Rooms = ({ email }) => {
 )}
 {/* คัดลอกห้องเรียน */}
 {isModalOpenCopy && userHostRooms.length > 0 && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-8 rounded-lg">
+  <div className="modal-overlay">
+    <div className="modal-container">
       <h1 className="text-lg text-black font-bold mb-4">เลือกห้องเพื่อคัดลอกห้อง</h1>
       <select
         value={selectedRoom}
@@ -337,13 +336,13 @@ const Rooms = ({ email }) => {
 
       <div className="flex justify-end">
         <button
-          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 border-gray-600 hover:border-gray-800"
+          className="mr-4 btn-gray"
           onClick={handleCloseModalCopy}
         >
           ยกเลิก
         </button>
         <button
-          className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-800 border-yellow-500 hover:border-yellow-700"
+          className="btn-alert"
           onClick={copyRoom}
           disabled={!selectedRoom}
         >
@@ -353,13 +352,11 @@ const Rooms = ({ email }) => {
     </div>
   </div>
 )}
-
-
-          <br />
+      
           {userRoomsCount < 12 ?(
             <>
-             <h1 className='text-2xl mt-10'>Choose a Room</h1>
-          <input className="text-xl mr-3 mt-3"
+             <h1 className='text-2xl mt-6'>Join a Room</h1>
+          <input className="input text-xl mr-3 mt-3"
             type="text"
             value={roomNumber}
             onChange={(e) => {
@@ -370,32 +367,29 @@ const Rooms = ({ email }) => {
             placeholder="Enter 5-digit room"
           />
 
-          <button onClick={handleJoinRoom}>เข้าร่วมห้อง</button>
+          <button className="btn-primary mt-4" onClick={handleJoinRoom}>เข้าร่วมห้อง</button>
 
-          {error && <p className="text-red-500">{error}</p>}
+          {error && <p className="error-text mt-2">{error}</p>}
 
             </>
           ):(
             <>
             <h1 className='text-2xl mt-10'>Choose a Room</h1>
 
-            <button disabled className=' text-gray-400 mt-4 border-red-600 hover:border-red-800' onClick={handleJoinRoom}>เข้าร่วมห้องไม่ได้แล้ว</button>
+            <button disabled className=' btn-gray mt-4' onClick={handleJoinRoom}>เข้าร่วมห้องไม่ได้แล้ว</button>
             </>
           )}
 
           {userRoomsCount > 0 ? (
   <>
     <h2 className='text-xl mt-10'>คุณเข้าร่วม {userRoomsCount}/12 ห้อง</h2>
-    <button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700" onClick={handleOpenModalLeave}>ออกห้อง</button>
+    <button className="mt-4 btn-error" onClick={handleOpenModalLeave}>ออกห้อง</button>
     <div className="flex flex-wrap justify-stretch mt-4">
       {userClientRooms.map(room => (
         <div key={room._id} className="w-1/4 p-2">
           <Link href={`/room/${room.roomNumber}`}>
-            <button className="mt-4">
-              {room.roomName} <br />
-              {room.roomNumber}
-            </button> 
-          </Link>
+            <button className="btn-primary mt-4">{room.roomName} <br />{room.roomNumber}</button>
+         </Link>
         </div>
       ))}
     </div>
@@ -409,29 +403,26 @@ const Rooms = ({ email }) => {
           {userHostRoomsCount < 12 ?(
             <>
              <h1 className='text-2xl'>Add a New Room</h1>
-          <button className='mt-4' onClick={handleAddRoom}>เพิ่มห้อง</button>
+          <button className='btn-secondary mt-4' onClick={handleAddRoom}>เพิ่มห้อง</button>
             </>
           ):(
             <>
             <h1 className='text-2xl'>Add a New Room</h1>
-            <button disabled className=' text-gray-400 mt-4 border-red-600 hover:border-red-800' onClick={handleAddRoom}>เพิ่มห้องไม่ได้แล้ว</button>
+            <button disabled className=' btn-gray mt-4' onClick={handleAddRoom}>เพิ่มห้องไม่ได้แล้ว</button>
             </>
           )}
          
          {userHostRoomsCount > 0 ? (
   <>
     <h2 className='text-2xl mt-10'>คุณมี {userHostRoomsCount}/12 ห้อง</h2>
-    <button className="mt-4 mr-4 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-800 border-yellow-500 hover:border-yellow-700" onClick={handleOpenModalCopy}>คัดลอกห้อง</button>
-    <button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-700" onClick={handleOpenModalDelete}>ลบห้อง</button>
+    <button className="mt-4 mr-4 btn-alert" onClick={handleOpenModalCopy}>คัดลอกห้อง</button>
+    <button className="mt-4 btn-error" onClick={handleOpenModalDelete}>ลบห้อง</button>
 
     <div className="flex flex-wrap justify-stretch mt-4">
   {userHostRooms.map(room => (
     <div key={room._id} className="w-1/4  p-2">
       <Link href={`/room/${room.roomNumber}`}>
-        <button className="mt-4">
-          {room.roomName} <br />
-          {room.roomNumber}
-        </button> 
+      <button className="btn-secondary mt-4">{room.roomName} <br />{room.roomNumber}</button>
       </Link>
     </div>
   ))}
@@ -444,10 +435,10 @@ const Rooms = ({ email }) => {
 
 
           {isModalOpen && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-              <div className="bg-white p-8 rounded-lg">
+            <div className="modal-overlay">
+              <div className="modal-container">
               <h1 className="text-lg text-black font-bold mb-4">กรอกชื่อเล่น</h1>
-                <input required
+<input required
   type="text"
   value={hostName}
   onChange={(e) => {
@@ -464,11 +455,12 @@ const Rooms = ({ email }) => {
       setHostName(`Admin`);
     }
   }}
-  className="border text-black bg-black border-gray-300 rounded px-4 py-2 w-full mb-4"
-  placeholder="ชื่อเล่น เช่น Admin"
+  className="input mb-4"
+  placeholder="Host Name (max 20 characters)"
 />
-                <h1 className="text-lg text-black font-bold mb-4">กรอกชื่อห้อง</h1>
-                <input
+
+<h1 className="text-lg text-black font-bold mb-4">กรอกชื่อห้อง</h1>
+<input
   type="text"
   value={roomName}
   onChange={(e) => {
@@ -485,14 +477,14 @@ const Rooms = ({ email }) => {
       setRoomName(`ห้อง ${userHostRoomsCount + 1}`);
     }
   }}
-  className="border text-black bg-black border-gray-300 rounded px-4 py-2 w-full mb-4"
-  placeholder="ชื่อห้อง เช่น ห้องที่ 1"
+  className="input mb-4"
+  placeholder="Room Name (max 20 characters)"
 />
 
 
                 <div className="flex justify-end">
-                  <button className="mr-4 bg-gray-700 px-4 py-2 rounded hover:bg-red-800" onClick={handleCloseModal}>ยกเลิก</button>
-                  <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={handleSubmitRoom}>สร้างห้อง</button>
+                <button className="mr-4 btn-gray" onClick={handleCloseModal}>ยกเลิก</button>
+                <button className="btn-secondary" onClick={handleSubmitRoom}>สร้างห้อง</button>
                 </div>
               </div>
             </div>
@@ -501,29 +493,41 @@ const Rooms = ({ email }) => {
 <br /><br />
         </div>
       ) : (
-        <div>
-          <br />
+        <div className="flex flex-col items-center mt-10">
+        
           <h1 className='text-2xl mt-10'>Please Log in to Access Rooms</h1>
-          <br />
-          <button className='mt-5'><Link href="/login">Login</Link></button>
-          <br />
-          <button className='mt-5'><Link href="/signup">Signup</Link></button>
+     
+          <button className='mt-5 btn-primary'><Link href="/login">Login</Link></button>
+       
+          <button className='mt-5 btn-secondary'><Link href="/signup">Signup</Link></button>
           
         </div>
       )}
+        </>
+      )}
+      
       
     </Layout>
   );
 };
 
 export async function getServerSideProps(context) {
+  
   const req = context.req;
   const res = context.res;
   var email = getCookie('email', { req, res });
+  // check 404 page
+  // if (email) {
+  //   return {
+  //     notFound: true,
+  //   };
+  // }
   if (!email) {
     email = null; // หรือ undefined ตามที่คุณต้องการ
   }
   return { props: { email } };
+
+  
 }
 
 export default Rooms;

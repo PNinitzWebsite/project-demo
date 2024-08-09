@@ -2,6 +2,7 @@
 import { MongoClient, ObjectId } from 'mongodb';
 import { faker } from '@faker-js/faker';
 
+const rooms = '20544'
 const url = 'mongodb://localhost:27017';
 const dbName = 'test';
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -42,7 +43,7 @@ const generateFakeExam = (email) => ({
     [`1.${email.replace(/\./g, '_')}`]: generateFakeUserAnswers(email),
 //   [`2.${email.replace(/\./g, '_')}`]: generateFakeUserAnswers(email),
 //   [`3.${email.replace(/\./g, '_')}`]: generateFakeUserAnswers(email),
-  roomId: '70469'
+  roomId: rooms
 
 });
 

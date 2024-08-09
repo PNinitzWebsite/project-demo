@@ -44,12 +44,16 @@ const LeaderboardPage = ( { email , users , host }) => {
 
   return (
     <div>
-      <Layout>
+      <Layout pageTitle={`Leaderboard for Room: ${id}`}>
       {users && users.includes(email) || host == email ? (
       <>
-       <Link className='text-xl mt-10 block' href="/room/[id]" as={`/room/${id}`}>
-        Go to room
-      </Link>
+  
+      <nav className='my-5 space-x-3'>
+          <Link href="/room/[id]" as={`/room/${id}`}>
+            <button className='text-sm btn-gray'>Go to room</button> 
+          </Link>
+      </nav>
+      
       <h1 className='text-xl'>Leaderboard for Room: {id}</h1>
       {loading ? (
         <Loading /> // แสดงภาพการโหลดเมื่อกำลังดึงข้อมูล

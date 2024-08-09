@@ -317,7 +317,7 @@ const saveQuestion = async (compiledResult, variableScores) => {
         e.stopPropagation();
       }
     }}>
-      <Layout pageTitle="Welcome">
+      <Layout pageTitle={`${initialQuestions[parseInt(exam)-1].name}`}>
       {loading ? (
       <Loading />
       ) : (
@@ -326,93 +326,67 @@ const saveQuestion = async (compiledResult, variableScores) => {
               <>
                 {room ? (
                   <>
-                    <div>
-                      <button className='text-sm mt-6 mb-6' onClick={handleExit}>Exit</button>
-                    </div>
+                    <nav className='my-5'>
+                        <button className='text-sm btn-gray' onClick={handleExit}>Go to room</button>      
+                    </nav>
 
                     {host == "host" ? (
                       // ของ Host
                       <>
-                        <center className='text-2xl bg-red-500 text-center uppercase'>Host</center>
-                        <h1 className='mt-5'>โจทย์ {exam}</h1>
+                        <center className='text-2xl bg-red-500 text-center uppercase text-white'>Host</center>
 
-                        <h1 className='mt-10 mb-5 text-2xl'>กรอกโจทย์โค้ด Python หัวข้อ: {initialQuestions[parseInt(exam)-1].name}</h1>
-                        <div>
-                        <button className='text-sm mt-2 mb-6' onClick={handleCode}>ดึงโจทย์เก่า</button>
-                        </div>
-
-                        <textarea
-  value={testCases}
-  onChange={(e) => setTestCases(e.target.value)}
-  placeholder="กรอก testCases ที่นี่ (แยกด้วยบรรทัดใหม่) เช่น testCase(true,false) ขึ้นบรรทัดใหม่ testCase(false,false)"
-  style={{
-    width: '100%',
-    color: 'black',
-    height: '7rem',
-    maxWidth: '70dvw',
-    borderRadius: '10px',
-    padding: '10px',
-    fontFamily: 'monospace',
-    fontSize: '16px',
-    marginTop: '10px',
-  }}
-/>
-
-<textarea
-  value={expectedResults}
-  onChange={(e) => setExpectedResults(e.target.value)}
-  placeholder="กรอก expectedResults ที่นี่ (แยกด้วยบรรทัดใหม่) เช่น true ขึ้นบรรทัดใหม่ false"
-  style={{
-    width: '100%',
-    color: 'black',
-    height: '7rem',
-    maxWidth: '70dvw',
-    borderRadius: '10px',
-    padding: '10px',
-    fontFamily: 'monospace',
-    fontSize: '16px',
-    marginTop: '10px',
-  }}
-/>
-     <div style={{ maxWidth: '70dvw', margin: '0 auto' }}>
-      <SyntaxHighlighter language="python" style={tomorrow}>
-        {code}
-      </SyntaxHighlighter>
-      <textarea
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        onKeyDown={handleTab}
-        placeholder="เขียนโค้ดที่นี่..."
-        style={{
-          width: '100%',
-          color: 'black',
-          height: '15rem',
-          maxWidth: '70dvw',
-          borderRadius: '10px',
-          padding: '10px',
-          fontFamily: 'monospace',
-          fontSize: '16px',
-          marginTop: '10px',
-        }}
-      />
-      <button className='mt-5 mb-5 block mx-auto hover:text-green-500' onClick={checkCode} disabled={processing}>
-        คำนวณผลลัพท์เพื่อตั้งโจทย์
-      </button>
- </div>
- 
-
+                        <h1 className='mt-10 mb-2 text-xl'><strong className='font-medium'>กรอกโจทย์โค้ด Python หัวข้อ:</strong> {initialQuestions[parseInt(exam)-1].name}</h1>
+                       
                         {questions[parseInt(exam)-1]?.exam == exam ? (
-                          <ul>
-                            <li>
-                              <p>โจทย์: {questions[parseInt(exam)-1].exam}</p>
-                              <p>ชื่อโจทย์: {questions[parseInt(exam)-1].name}</p>
-                              <p>รายละเอียดโจทย์: {questions[parseInt(exam)-1].detel}</p>
-                              <pre className='text-green-500'>เฉลยโจทย์: {questions[parseInt(exam)-1].code ? questions[parseInt(exam)-1].code : "ไม่มีเฉลย"}</pre>
+                          <ul className='mx-auto max-w-xl'>
+                            <li className='text-lg px-10 font-text space-y-1'>
+                              <p><strong className='font-medium'>ชื่อโจทย์:</strong> {questions[parseInt(exam)-1].name}</p>
+                              <p><strong className='font-medium'>รายละเอียดโจทย์:</strong> {questions[parseInt(exam)-1].detel}</p>
+                              <pre><strong className='font-medium '>เฉลยโจทย์:</strong> {questions[parseInt(exam)-1].code ? questions[parseInt(exam)-1].code : "ไม่มีเฉลย"}</pre>
                             </li>
                           </ul>
                         ) : (
                           <h1>ยังไม่มีโจทย์</h1>
-                        )}   
+                        )}  
+
+                        <button className='text-sm mt-6 mb-6 btn-primary' onClick={handleCode}>ดึงโจทย์เก่า</button>
+                        
+<div className="flex flex-col items-center justify-center md:flex-row md:space-x-4 space-y-4 md:space-y-0 md:items-start">
+  <textarea
+    value={testCases}
+    onChange={(e) => setTestCases(e.target.value)}
+    placeholder="กรอก testCases ที่นี่ (แยกด้วยบรรทัดใหม่) เช่น testCase(true,false) ขึ้นบรรทัดใหม่ testCase(false,false)"
+    className='input md:max-w-[30%] md:border-l-red-500 md:border-l-8'
+    rows={12}
+  />
+
+  <textarea
+    value={expectedResults}
+    onChange={(e) => setExpectedResults(e.target.value)}
+    placeholder="กรอก expectedResults ที่นี่ (แยกด้วยบรรทัดใหม่) เช่น true ขึ้นบรรทัดใหม่ false"
+    className='input md:max-w-[20%] md:border-l-blue-500 md:border-l-8'
+    rows={12}
+  />
+
+  <div className='input md:max-w-[33.33%]'>
+    <SyntaxHighlighter language="python" >
+      {code}
+    </SyntaxHighlighter>
+    <textarea
+      value={code}
+      onChange={(e) => setCode(e.target.value)}
+      onKeyDown={handleTab}
+      placeholder="เขียนโค้ดที่นี่..."
+      className='w-full pl-2 md:border-l-green-500 md:border-l-8'
+      rows={5}
+    />
+  </div>
+</div>
+
+<button className='mt-5 mb-5 btn-secondary' onClick={checkCode} disabled={processing}>
+  คำนวณผลลัพท์เพื่อตั้งโจทย์
+</button>
+
    
                         {processing ? (
                           <p>กรุณารอคำนวณสักครู่...</p>
@@ -423,9 +397,9 @@ const saveQuestion = async (compiledResult, variableScores) => {
                               {result.success ? (
                                 <p>{result.message}</p>
                               ) : (
-                                <p className='text-red-500'>{result.error}</p>
+                                <p className='error-text'>{result.error}</p>
                               )}
-                              {Array.isArray(fresult) === "reset" ? <p className='text-xl text-green-500'>อัพเดทคะแนนสำเร็จแล้ว!</p> :""}
+                              {Array.isArray(fresult) === "reset" ? <p className='text-xl success-text'>อัพเดทคะแนนสำเร็จแล้ว!</p> :""}
                               {Array.isArray(fresult) ? <>
                                 <h1 className='mt-5 mb-1 text-xl'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์โจทย์ (ล่าสุด):</h1>
     {fresult.map((result, index) => (
@@ -433,19 +407,19 @@ const saveQuestion = async (compiledResult, variableScores) => {
        <p><strong>Test Case: </strong> {result.test_case}</p>
        <p>
            <strong>Expected Result: </strong> 
-           <span className={result.correct ? 'text-green-500' : 'text-red-500'}>
+           <span className={result.correct ? 'success-text' : 'error-tex'}>
                {result.expected}
            </span>
        </p>
        <p>
            <strong>Your Result: </strong> 
-           <span className={result.correct ? 'text-green-500' : 'text-red-500'}>
+           <span className={result.correct ? 'success-text' : 'error-text'}>
                {result.your_result}
            </span>
        </p>
        <p>
            <strong>Correct: </strong> 
-           <span className={result.correct ? 'text-green-500' : 'text-red-500'}>
+           <span className={result.correct ? 'success-text' : 'error-text'}>
                {result.correct ? 'Yes' : 'No'}
            </span>
        </p>
@@ -466,13 +440,13 @@ const saveQuestion = async (compiledResult, variableScores) => {
                 updateVariableScore(varName, newValue);
               }}
               min="0"
-              className="w-16 px-2 py-1 text-black"
+              className="w-16 px-2 py-1 font-text"
             />
           </div>
         );
       })}
       <button
-        className='mt-3' 
+        className='mt-3 btn-secondary' 
         onClick={() => {
           saveQuestion(fresult, variableScores);
         }}
@@ -492,13 +466,15 @@ const saveQuestion = async (compiledResult, variableScores) => {
                       <>
                       {initialQuestions[parseInt(exam)-1]?.isUse === true ? 
                       <>
-                      <center className='text-2xl bg-yellow-700 text-center uppercase'>Client</center>            
-                        <h1 className='mt-10 mb-2 text-2xl'>หัวข้อ : {questions[parseInt(exam)-1].name}</h1>
-                        <h1 className='mt-1 mb-5 text-xl'>คำอธิบาย : {questions[parseInt(exam)-1].detel}</h1>
+                      <center className='text-2xl bg-yellow-600 text-center uppercase text-white'>Client</center>            
+                        <main className=' max-w-xl mx-auto px-5'>
+                          <h1 className='mt-5 mb-2 text-2xl'><strong className='font-medium'>หัวข้อ :</strong> {questions[parseInt(exam)-1].name}</h1>
+                          <h1 className='mt-1 mb-5 text-xl'><strong className='font-medium'>คำอธิบาย :</strong> {questions[parseInt(exam)-1].detel}</h1>
+                        </main>
                         
-                        <h1 className='mt-10 mb-5 text-2xl'>ตรวจสอบไวยากรณ์ของโค้ด Python</h1>
-                        <div style={{ maxWidth:'85dvw',margin:'0 auto', }}>
-                        <SyntaxHighlighter language="python" style={tomorrow} disabled={answerSubmitted}>
+                        <h1 className='my-5 text-2xl'>ตรวจสอบไวยากรณ์ของโค้ด Python</h1>
+                        <div className='input md:border-l-8 md:border-l-green-500 mx-auto md:max-w-[40%]'>
+                        <SyntaxHighlighter language="python" disabled={answerSubmitted}>
                           {code}
                         </SyntaxHighlighter>
                         <textarea 
@@ -507,26 +483,16 @@ const saveQuestion = async (compiledResult, variableScores) => {
                           onKeyDown={handleTab}
                           placeholder="เขียนโค้ดที่นี่..."
                           disabled={answerSubmitted}
-                          style={{
-                            width: '100%',
-                            color: answerSubmitted ? 'gray' : 'black',
-                            height: '15rem',
-                            maxWidth:'85dvw',
-                            borderRadius: '10px',
-                            padding: '10px',
-                            fontFamily: 'monospace',
-                            fontSize: '16px',
-                            marginTop: '10px',
-                            backgroundColor: answerSubmitted ? '#f0f0f0' : 'white',
-                          }}
+                          className='w-full pl-4'
+                          rows={8}
                         />
                       </div>
-                        <button disabled={answerSubmitted} className='mt-5 mb-5 block mx-auto hover:text-green-500' onClick={checkCode}>ตรวจสอบผลลัพท์</button>
+                        <button disabled={answerSubmitted} className='mt-5 mb-5 btn-secondary' onClick={checkCode}>ตรวจสอบผลลัพท์</button>
                         
                         {point != '' ?(
                           <>
-                          <p className="mt-4 text-lg font-semibold">{point}</p>
-                          <p className="mt-4 text-lg font-semibold">{pointCount}</p>
+                          <p className="mt-4 text-xl font-medium">{point}</p>
+                          <p className="mt-4 text-xl font-medium">{pointCount}</p>
                           
                           </>):(<></>)}
                         
@@ -537,33 +503,32 @@ const saveQuestion = async (compiledResult, variableScores) => {
         
                           result && answerSubmitted === false && (
                             <div>
-                              <h2>ผลลัพธ์:</h2>
                               {result.success ? (
                                 <p>{result.message}</p>
                               ) : (
-                                <p className='text-red-500'>{result.error}</p>
+                                <p className='error-text'>{result.error}</p>
                               )}
 
 {Array.isArray(fresult) ? <>
-                                <h1 className='mt-5 mb-1 text-xl'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์โจทย์ (ล่าสุด):</h1>
+                                <h1 className='mt-1 mb-1 text-xl'>ผลลัพธ์จากการคำนวณหรือการคอมไพล์โจทย์ (ล่าสุด):</h1>
     {fresult.map((result, index) => (
        <div key={index} style={{ marginBottom: '10px' }}>
        <p><strong>Test Case: </strong> {result.test_case}</p>
        <p>
            <strong>Expected Result: </strong> 
-           <span className={result.correct ? 'text-green-500' : 'text-red-500'}>
+           <span className={result.correct ? 'success-text' : 'error-text'}>
                {result.expected}
            </span>
        </p>
        <p>
            <strong>Your Result: </strong> 
-           <span className={result.correct ? 'text-green-500' : 'text-red-500'}>
+           <span className={result.correct ? 'success-text' : 'error-text'}>
                {result.your_result}
            </span>
        </p>
        <p>
            <strong>Correct: </strong> 
-           <span className={result.correct ? 'text-green-500' : 'text-red-500'}>
+           <span className={result.correct ? 'success-text' : 'error-text'}>
                {result.correct ? 'Yes' : 'No'}
            </span>
        </p>
@@ -578,7 +543,7 @@ const saveQuestion = async (compiledResult, variableScores) => {
   <>
     {fresult && (
       <button 
-        className='mt-5 mb-5 block mx-auto border-blue-500 hover:text-blue-500 hover:border-blue-500'
+        className='mt-5 mb-10 btn-primary'
         onClick={submitAnswer}
         disabled={processing}
       >

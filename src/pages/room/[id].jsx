@@ -3,7 +3,6 @@ import React, { useEffect, useState,useCallback } from 'react';
 import Link from 'next/link';
 import Layout from '@/components/layout';
 import { getCookie } from 'cookies-next';
-import styles from '../../components/style.module.css'; // นำเข้า CSS ไฟล์
 import NicknameModal from '@/components/NicknameModal';
 import Loading from '@/components/Loading'; // นำเข้า component Loading
 import clientPromise from '../../lib/mongodb';
@@ -13,7 +12,7 @@ import Modal from 'react-modal';
 // ตั้งค่าการใช้ modal ในแอป
 Modal.setAppElement('#__next');
 
-const Room = ({ email ,users, initialQuestions,answers }) => {
+const Room = ({ email ,users, initialQuestions,rooms }) => {
   const router = useRouter();
   const { id } = router.query;
   const [room, setRoom] = useState(null);
@@ -35,6 +34,7 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
   const [isEditRoomNameModalOpen, setIsEditRoomNameModalOpen] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [file, setFile] = useState(null);
+  const [isValidFile, setIsValidFile] = useState(true);
 
   const [questions, setQuestions] = useState(initialQuestions);
   const hasQuestions = Array.isArray(questions) ? questions.length > 0 : Object.keys(questions).length > 0;
@@ -42,6 +42,52 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
   const [isMovingCategory, setIsMovingCategory] = useState(false);
   const [isModalOpenRemoveUser, setIsModalOpenRemoveUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
+
+  // Handle file drop event
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const droppedFile = event.dataTransfer.files[0];
+    if (droppedFile && droppedFile.name.endsWith(".py")) {
+      setFile(droppedFile);
+      setIsValidFile(true);
+    } else {
+      setFile(null);
+      setIsValidFile(false);
+      alert("Please upload a .py file");
+    }
+  };
+
+  // Handle file drag over event
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  // Handle file input change event
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile && selectedFile.name.endsWith(".py")) {
+      setFile(selectedFile);
+      setIsValidFile(true);
+    } else {
+      setFile(null);
+      setIsValidFile(false);
+      alert("Please upload a .py file");
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (isValidFile && file) {
+      uploadPython(file);
+    } else {
+      alert("Please upload a valid .py file.");
+    }
+  };
+  // Trigger file input dialog programmatically
+  const triggerFileInput = () => {
+    document.getElementById('file').click();
+  };
 
   const handleOpenModalRemoveUser = () => {
     setIsModalOpenRemoveUser(true);
@@ -165,9 +211,7 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
     router.push(`${id}/exam/check-exam`);
   };
 
-  const uploadPython = async (e) => {
-    e.preventDefault();
-  
+  const uploadPython = async () => {
     if (!file) {
       alert('Please select a file');
       return;
@@ -448,7 +492,7 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
     // JSX Part
     return (
       <div>
-        <Layout pageTitle="Welcome">
+        <Layout pageTitle={`${rooms} (${id})`}>
           {loading ? (
             <Loading />
           ) : (
@@ -457,45 +501,55 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
                 <>
                   {room ? (
                     <>
-                      <div>
-                        <button className='text-sm mt-6 mb-6' onClick={handleExit}>Exit Room</button>
-                      </div>
+                      <nav className='my-5 space-x-3'>
+                        <button className='text-sm btn-gray' onClick={handleExit}>Exit Room</button>
+                        {/* เช็กตรวจโจทย์ */}
+                        {host === "host" ? <button className="text-sm btn-primary" onClick={checkExam}>ตรวจโจทย์</button>:
+                        <>
+                        {/* Profile */}
+                        <Link href={`/room/${id}/profile/${profileNumber}`}>
+                           <button className='btn-alert text-sm'>Profile</button>
+                        </Link>
+                        </>}
+                        <Link href="/room/[id]/leaderboard" as={`/room/${id}/leaderboard`}>
+                           <button className="text-sm btn-secondary">Leaderboard</button>
+                        </Link>
+                      </nav>
                       {host === "host" ? (
                         // ของ Host
                         <>
-                          <center className='text-2xl bg-red-500 text-center uppercase'>Host</center>           
-                          <nav>
-                          <a className="mt-10 inline-block text-sm cursor-pointer text-gray-500 hover:text-red-500" onClick={() => openEditRoomNameModal()}>
+                          <center className='text-2xl bg-red-500 text-white text-center uppercase'>Host</center>           
+                          <header className='my-5'>
+                          <a className="inline-block text-sm cursor-pointer gray-text" onClick={() => openEditRoomNameModal()}>
                              แก้ไข</a>
-                          <h1 className="text-3xl">ชื่อห้อง :<span className='text-white'> {room.roomName}</span> </h1>
-                          <h1 className="text-3xl mt-10">Welcome <span className={styles.greenText}>{email}</span> to Room
-                          <span className={styles.yellowText}> {room.roomNumber}</span></h1>
-                          </nav>
+                          <h1 className="text-2xl">ชื่อห้อง :<span> {room.roomName} ({room.roomNumber})</span> </h1>
+                          <h1 className="text-2xl">Welcome <span className='error-text'>{email} </span>({room.hostName})</h1>
+                          </header>
 {/* modal แก้ไขชื่อห้อง */}
     <Modal
       isOpen={isEditRoomNameModalOpen}
       onRequestClose={closeEditRoomNameModal}
-      overlayClassName={styles.ReactModal__Overlay}
-       className={styles.ReactModal__Content}
+      overlayClassName="modal-overlay"
+      className="modal-container"
       contentLabel="Edit Room Name Modal"
     >
-      <h2 className='mb-5'>Edit Room Name</h2>
+      <h1 className='mb-5'>Edit Room Name</h1>
       <input required
         type="text"
         value={newRoomName}
         onChange={handleRoomNameChange}
-        className='mb-5'
+        className='mb-5 input'
       />
-      <br />
-      <button className='mr-4' onClick={saveNewRoomName}>Save</button>
-      <button className='mr-4' onClick={closeEditRoomNameModal}>Cancel</button>
+     
+      <button className='mr-4 btn-gray' onClick={closeEditRoomNameModal}>Cancel</button>
+      <button className='mr-4 btn-secondary' onClick={saveNewRoomName}>Save</button>    
     </Modal>
 
 {/*  ลบผู้ใช้ออกห้อง */}
     {isModalOpenRemoveUser && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-8 rounded-lg">
-      <h1 className="text-lg text-black font-bold mb-4">เลือกผู้ใช้เพื่อลบออกจากห้อง</h1>
+  <div className="modal-overlay">
+    <div className="modal-container">
+      <h1 className="text-lg text-black font-medium mb-4">เลือกผู้ใช้เพื่อลบออกจากห้อง</h1>
       <select
         value={selectedUser}
         onChange={(e) => setSelectedUser(e.target.value)}
@@ -513,13 +567,13 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
 
       <div className="flex justify-end">
         <button
-          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 border-gray-600 hover:border-gray-800"
+          className="mr-4 btn-primary"
           onClick={handleCloseModalRemoveUser}
         >
           ยกเลิก
         </button>
         <button
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-600 hover:border-red-800"
+          className="btn-error"
           onClick={removeUserFromRoom}
           disabled={!selectedUser}
         >
@@ -530,65 +584,97 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
   </div>
 )}
 
-{/* อัพโหลดโจทย์ python */}
-<h1 className='mt-5'>Upload Python File</h1>
-<form onSubmit={uploadPython} className='mt-6'>
-  <input
-    required
-    type="file"
-    accept=".py"
-    onChange={(e) => setFile(e.target.files[0])}
-  />
-  <br />
-  <button className='mt-5' type="submit">Upload</button>
-</form>
+<main>
+  {/* อัพโหลดโจทย์ python */}
+  <section className='my-5'>
+  <h1>Upload Python File</h1>
+  <form onSubmit={handleSubmit} className='file-upload-form mt-3 flex flex-col space-y-3 mx-auto'>
+      <label
+        htmlFor="file"
+        className="file-upload-label cursor-pointer"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onClick={triggerFileInput} // Ensure clicking label opens file dialog
+      >
+        <div className="file-upload-design">
+          <svg viewBox="0 0 640 512" height="1em">
+            <path d="M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9c-.1-2.7-.2-5.4-.2-8.1c0-88.4 71.6-160 160-160c59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96c0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z"></path>
+          </svg>
+          {file ? (
+            <p>{file.name}</p>
+          ) : (
+            <>
+              <p>Drag and Drop</p>
+              <p>or</p>
+              <span className="browse-button">Browse file</span>
+            </>
+          )}
+        </div>
+        <input
+          type="file"
+          accept=".py"
+          onChange={handleFileChange}
+          id="file"
+          style={{ display: 'none' }} // Hide input
+        />
+      </label>
+      <button className='text-sm btn-secondary w-[100px] mx-auto' type="submit">Upload</button>
+    </form>
+  </section>
+</main>
+
   
 {/* Modal แก้ไขชื่อหมวดหมู่และซ่อน/แสดง */}
 <Modal isOpen={modalEditOpen} onRequestClose={handleCloseEditModal}
- overlayClassName={styles.ReactModal__Overlay}
- className={styles.ReactModal__Content}>
-  <h2 className='mb-5'>Edit Category : {selectedCategory}</h2>
-  <input required type="text" value={categoryQuestions} onChange={(e) => setCategoryQuestions(e.target.value)} />
-  <br />
-  
-  <button className='mr-4' onClick={() => editCategory()}>Save Changes</button>
-  <button className='mr-4' onClick={handleCloseEditModal}>Cancel</button>
-  
+ overlayClassName="modal-overlay"
+ className="modal-container">
+  <h2 className='mb-4'>Edit Category : {selectedCategory}</h2>
+  <input className='input' required type="text" value={categoryQuestions} onChange={(e) => setCategoryQuestions(e.target.value)} />
   {selectedCategory && (
-    <div>
+    <div className='my-4 space-x-2'>
       {Object.values(questions).some(q => q.category === selectedCategory && q.isUse) ? 
-        <button className='my-4' onClick={() => editCategory(selectedCategory, false)}>ซ่อน</button> 
+      <>
+        <button className='btn-primary' onClick={() => editCategory(selectedCategory, false)}>ซ่อน</button>
+        <button className='btn-gray' onClick={handleCloseEditModal}>Cancel</button>
+        <button className='btn-secondary' onClick={() => editCategory()}>Save Changes</button> 
+      </>
         : 
-        <button className='my-4' onClick={() => editCategory(selectedCategory, true)}>แสดง</button>}
+        <>
+          <button className='btn-primary' onClick={() => editCategory(selectedCategory, true)}>แสดง</button>
+          <button className='btn-gray' onClick={handleCloseEditModal}>Cancel</button>
+          <button className='btn-secondary' onClick={() => editCategory()}>Save Changes</button>
+        </>
+        }
     </div>
   )}
+  
 </Modal>
-{/* modal ย้ายหมวดหมู่ */}
+                          {/* modal ข้อสอบ */}
                           <Modal isOpen={modalIsOpen} onRequestClose={closeModal}
-                          overlayClassName={styles.ReactModal__Overlay}
-                          className={styles.ReactModal__Content}
+                          overlayClassName="modal-overlay"
+                          className="modal-container"
                           >
                             <h2 className='mb-3'>{selectedExam?.name}</h2><hr />
                             <p className='mt-3 mb-5'>{selectedExam?.detel}</p><hr />
-                            <button className='mt-4 mr-3' onClick={startExam}>แก้ไขโจทย์</button>
-                            <button onClick={closeModal}>ปิด</button>
+                            <button className='mt-4 mr-3 btn-primary' onClick={startExam}>แก้ไขโจทย์</button>
+                            <button className='btn-gray' onClick={closeModal}>ปิด</button>
                           </Modal>
   
-                            <br />
+                          {/* ปุ่ม */}
                             <div className="flex justify-center space-x-2">
-                              <button onClick={handleAddQestion}>เพิ่มโจทย์</button>
+                              <button className='btn-primary' onClick={handleAddQestion}>เพิ่มโจทย์</button>
                               {Object.keys(questions).length > 0 && (
                                 <>
-                                  <button onClick={handleDeleteQestion}>ลบโจทย์</button>
-                                  <button onClick={() => setIsMovingCategory(true)}>ย้ายหมวดหมู่</button>
+                                  <button className='btn-error' onClick={handleDeleteQestion}>ลบโจทย์</button>
+                                  <button className='btn-alert' onClick={() => setIsMovingCategory(true)}>ย้ายหมวดหมู่</button>
                                 </>
                               )}
                             </div>
 {/* ย้ายหมวดหมู่ */}
 {isMovingCategory && hasQuestions && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-8 rounded-lg">
-      <h1 className="text-lg text-black font-bold mb-4">เลือกโจทย์เพื่อย้ายหมวดหมู่</h1>
+  <div className="modal-overlay">
+    <div className="modal-container">
+      <h1 className="text-lg text-black font-medium mb-4">เลือกโจทย์เพื่อย้ายหมวดหมู่</h1>
       <select
         value={selectedExam}
         onChange={(e) => setSelectedExam(e.target.value)}
@@ -612,13 +698,13 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
 
       <div className="flex justify-end">
         <button
-          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+          className="mr-4 btn-gray"
           onClick={() => setIsMovingCategory(false)}
         >
           ยกเลิก
         </button>
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-800"
+          className="btn-alert"
           onClick={moveCategory}
           disabled={!selectedExam || !newCategory}
         >
@@ -630,9 +716,9 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
 )}
   {/* ลบโจทย์ */}
 {isModalOpenDelete && hasQuestions && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white p-8 rounded-lg">
-      <h1 className="text-lg text-black font-bold mb-4">เลือกโจทย์เพื่อลบ</h1>
+  <div className="modal-overlay">
+    <div className="modal-container">
+      <h1 className="text-lg text-black font-medium mb-4">เลือกโจทย์เพื่อลบ</h1>
       <select
         value={selectedExam}
         onChange={(e) => setSelectedExam(e.target.value)}
@@ -648,13 +734,13 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
 
       <div className="flex justify-end">
         <button
-          className="mr-4 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+          className="mr-4 btn-gray"
           onClick={handleCloseModalDelete}
         >
           ยกเลิก
         </button>
         <button
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800"
+          className="btn-error"
           onClick={deleteQuestion}
           disabled={!selectedExam}
         >
@@ -667,9 +753,9 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
                          <br />
   {/* เพิ่มโจทย์ */}
 {isModalOpen && (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white p-10 rounded-lg w-full max-w-[500px]">
-        <h1 className="text-lg text-black font-bold mb-4">ชื่อโจทย์</h1>
+    <div className="modal-overlay">
+      <div className="modal-container">
+        <h1 className="text-lg text-black font-medium mb-4">ชื่อโจทย์</h1>
         <input required
           type="text"
           value={nameQuestions}
@@ -687,11 +773,11 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
               setNameQuestions(`โจทย์ ${Object.keys(questions).length > 0 ? Object.keys(questions).length+1 : 1}`);
             }
           }}
-          className="border text-black bg-black border-gray-300 rounded px-4 py-2 w-full mb-4"
+          className="border text-black border-gray-300 rounded px-4 py-2 w-full mb-4"
           placeholder="ชื่อโจทย์ เช่น โจทย์ 1"
         /> 
-        <h1 className="text-sm text-black font-bold mb-4">หมวดหมู่โจทย์:</h1>
-        <input  className="border text-black bg-black border-gray-300 rounded px-4 py-2 w-full mb-4"
+        <h1 className="text-sm text-black font-medium mb-4">หมวดหมู่โจทย์:</h1>
+        <input  className=" border text-black  border-gray-300 rounded px-4 py-2 w-full mb-4"
          required type="text" value={categoryQuestions} placeholder="หมวดหมู่โจทย์ เช่น หมวดหมู่ 1"
          onChange={(e) => {
           const inputText = e.target.value;
@@ -708,10 +794,10 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
           }
         }} />
 
-        <h1 className="text-sm text-black font-bold mb-4">รายละเอียดโจทย์:</h1>
+        <h1 className="text-sm text-black font-medium mb-4">รายละเอียดโจทย์:</h1>
         <textarea required
           type="text"
-          rows={5}
+          rows={6}
           value={detelQuestions}
           onChange={(e) => {
             const inputText = e.target.value;
@@ -727,22 +813,19 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
               setDetelQuestions(`รายละเอียดโจทย์ ${Object.keys(questions).length > 0 ? Object.keys(questions).length+1 : 1}`);
             }
           }}
-          className=" border text-black bg-white border-green-500 rounded px-4 py-2 w-full mb-4"
+          className=" border text-black rounded px-4 py-2 w-full mb-4"
           placeholder="รายละเอียดโจทย์ เช่น รายละเอียดโจทย์ 1"
         />
   
         <div className="flex justify-center">
-          <button className="mr-4 bg-gray-700 px-4 py-2 rounded hover:bg-red-800" onClick={handleCloseModal}>ยกเลิก</button>
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={addQuestion}>เพิ่มโจทย์</button>
+          <button className="mr-4 btn-gray" onClick={handleCloseModal}>ยกเลิก</button>
+          <button className="btn-primary" onClick={addQuestion}>เพิ่มโจทย์</button>
         </div>
       </div>
     </div>
   )}
 
-  {/* เช็กตรวจโจทย์ */}
-  <div className="flex justify-center">
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-800" onClick={checkExam}>ตรวจโจทย์</button>
-  </div>
+
   
   {/* โจทย์ทั้งหมด */}
   <div>
@@ -758,9 +841,9 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
         return latestB - latestA; // เรียงจากใหม่ไปเก่า
       })
       .map((category, index) => (
-        <div key={index}>
-          <h1 className='mt-10 mb-8 text-xl items-center'>
-            <a className="text-sm cursor-pointer text-gray-500 hover:text-red-500" onClick={() => handleOpenEditModal(category)}>
+        <div key={index} className=' space-y-3 mb-6'>
+          <h1 className='my-3 text-xl items-center'>
+            <a className="text-sm cursor-pointer gray-text" onClick={() => handleOpenEditModal(category)}>
               แก้ไข
             </a>
             <br />
@@ -771,7 +854,7 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
             .filter(question => question.category === category)
             .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // เรียงคำถามในหมวดหมู่จากใหม่ไปเก่า
             .map((question, qIndex) => (
-              <button className='mx-1' key={qIndex} onClick={() => openModal(question)}>
+              <button className='mx-1 text-lg btn-primary' key={qIndex} onClick={() => openModal(question)}>
                 {question.name || `โจทย์ ${qIndex + 1}`}
               </button>
             ))
@@ -798,7 +881,7 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
 
 <br />
 {/* แก้ไขชื่อเล่น */}
-<button onClick={handleEditNickname} className=' inline-block hover:text-green-500'>
+<button onClick={handleEditNickname} className=' text-sm btn-gray'>
                               แก้ไขชื่อเล่น
                             </button>
                             <NicknameModal
@@ -808,11 +891,11 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
                             initialNickname={nickname}
                           />
                           <br />
-{answers["1"] ? 
-<button className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800 border-red-500 hover:border-red-800" onClick={handleOpenModalRemoveUser}>ลบผู้ใช้ออกจากห้อง</button>
-:""}
+
+<button className="mt-4 btn-error text-sm" onClick={handleOpenModalRemoveUser}>ลบผู้ใช้ออกจากห้อง</button>
+
 <h1 className="text-2xl mt-5">มีใครบ้าง :</h1>
-                    <ul className='mt-3'><li className="text-red-500 text-lg">{room.hostName} (HOST)</li></ul>
+                    <ul className='mt-3'><li className="text-red-500 text-lg">{room.hostName} ( Host )</li></ul>
                     {room.scores ? (
                       <>
                        <ul className='mb-10'>
@@ -825,11 +908,7 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
                         ))}
                       </ul>
 
-                        <div className='text-xl mt-5 mb-10'>
-                          <Link href="/room/[id]/leaderboard" as={`/room/${id}/leaderboard`}>
-                            Go to Leaderboard
-                          </Link>
-                        </div>
+                        
                       </>
                     ) : (<> </>)}
 <br /><br />
@@ -839,20 +918,11 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
                       ) : (
                         // ของ Client
                         <>
-                          <center className='text-2xl bg-yellow-700 text-center uppercase'>Client</center>
-                          <h1 className="text-3xl mt-10">ชื่อห้อง :<span className='text-white'> {room.roomName}</span> </h1>
-                          <h1 className="text-3xl mt-10">Welcome <span className={styles.greenText}>{email}</span> to Room
-                          <span className={styles.yellowText}> {room.roomNumber}</span></h1>
-                          <center className='space-x-2'>
-                            {/* Profile */}
-                            <Link className='text-center inline-block mt-8 text-white hover:text-green-500' href={`/room/${id}/profile/${profileNumber}`}>
-                              <button>Profile</button>
-                            </Link>
-                            {/* เพิ่ม name */}
-                            <button onClick={handleEditNickname} className=' inline-block hover:text-green-500'>
-                              แก้ไขชื่อเล่น
-                            </button>
-                          </center>
+                          <center className='text-2xl bg-yellow-600 text-white text-center uppercase'>Client</center>
+                          <header className='my-8'>
+                            <h1 className="text-2xl">ชื่อห้อง :<span> {room.roomName} ({room.roomNumber})</span> </h1>
+                            <h1 className="text-2xl">Welcome <span className='text-yellow-600'>{email} </span>(User)</h1>
+                          </header>
                             <NicknameModal
                             show={showModal}
                             onClose={() => setShowModal(false)}
@@ -875,44 +945,42 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
         return latestB - latestA; // เรียงจากใหม่ไปเก่า
       })
       .map((category, index) => (
-        <div key={index}>
-          <h1 className='mt-10 mb-8 text-xl items-center'>
-            <span>{category}</span>
-          </h1>
-          {Object.values(questions)
-            .filter(question => question.category === category && question.isUse)
-            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // เรียงคำถามในหมวดหมู่จากใหม่ไปเก่า
-            .map((question, qIndex) => (
-              <button className='mx-1' key={qIndex} onClick={() => openModal(question)}>
-                {question.name || `โจทย์ ${qIndex + 1}`}
-              </button>
-            ))
-          }
-        </div>
+        <div key={index} className=' space-y-3 mb-6'>
+        <h1 className='my-3 text-xl items-center'>
+          <br />
+          <span>{category}</span>
+        </h1>
+        {Object.values(questions)
+          .filter(question => question.category === category)
+          .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // เรียงคำถามในหมวดหมู่จากใหม่ไปเก่า
+          .map((question, qIndex) => (
+            <button className='mx-1 text-lg btn-primary' key={qIndex} onClick={() => openModal(question)}>
+              {question.name || `โจทย์ ${qIndex + 1}`}
+            </button>
+          ))
+        }
+      </div>
       ))
   ) : (
     ""
   )}
 </div>
 
-<Modal
-  isOpen={modalIsOpen}
-  onRequestClose={closeModal}
-  overlayClassName={styles.ReactModal__Overlay}
-  className={styles.ReactModal__Content}
->
-  <h2 className='mb-3'>{selectedExam?.name}</h2>
-  <hr />
-  <p className='mt-3 mb-5'>{selectedExam?.detel}</p>
-  <hr />
-  <button className='mt-4 mr-3' onClick={() => router.push(`${id}/exam/${selectedExam?.exam}`)}>
-    เริ่มทำโจทย์
-  </button>
-  <button onClick={closeModal}>ปิด</button>
-</Modal>
+                        <Modal isOpen={modalIsOpen} onRequestClose={closeModal}
+                          overlayClassName="modal-overlay"
+                          className="modal-container"
+                          >
+                            <h2 className='mb-3'>{selectedExam?.name}</h2><hr />
+                            <p className='mt-3 mb-5 text-lg'>{selectedExam?.detel}</p><hr />
+                            <button className='mt-4 mr-3 btn-primary' onClick={startExam}>เริ่มทำโจทย์</button>
+                            <button className='btn-gray' onClick={closeModal}>ปิด</button>
+                        </Modal>
 
-                        <br />
-                        <h1 className="text-2xl mt-10">มีใครบ้าง :</h1>
+                      {/* เพิ่ม name */}
+                      <button onClick={handleEditNickname} className='text-sm btn-gray mt-10'>
+                              แก้ไขชื่อเล่น
+                      </button>
+                        <h1 className="text-2xl mt-5">มีใครบ้าง :</h1>
                     <ul className='mt-3'><li className="text-red-500 text-lg">{room.hostName} (HOST)</li></ul>
                     {room.scores ? (
                       <>
@@ -926,11 +994,7 @@ const Room = ({ email ,users, initialQuestions,answers }) => {
                         ))}
                       </ul>
 
-                        <div className='text-xl mt-5 mb-10'>
-                          <Link href="/room/[id]/leaderboard" as={`/room/${id}/leaderboard`}>
-                            Go to Leaderboard
-                          </Link>
-                        </div>
+                        
                       </>
                     ) : (<> </>)}
                      
@@ -995,28 +1059,8 @@ export async function getServerSideProps(context) {
       notFound: true,
     };
   }
-  const answer = await db.collection("answers").findOne({ roomId: id });
-  
-  function convertDatesToStrings(obj) {
-    if (obj === null || typeof obj !== 'object') {
-      return obj;
-    }
-  
-    if (obj instanceof Date) {
-      return obj.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-    }
-  
-    if (Array.isArray(obj)) {
-      return obj.map(convertDatesToStrings);
-    }
-  
-    return Object.keys(obj).reduce((acc, key) => {
-      acc[key] = convertDatesToStrings(obj[key]);
-      return acc;
-    }, {});
-  }
-  // Convert Date objects to strings
-  const serializedAnswers = convertDatesToStrings(answer);
+
+
   // Ensure users is an array or null
   const users = room.users || null;
   // console.log("Initial questions data:", room.questions);
@@ -1026,7 +1070,7 @@ export async function getServerSideProps(context) {
       roomNumber: id, // ส่ง roomNumber ไปด้วย
       users,
       initialQuestions: room.questions || {},  
-      answers:serializedAnswers || {}
+      rooms :room.roomName || "ห้อง "
     },
   };
 }

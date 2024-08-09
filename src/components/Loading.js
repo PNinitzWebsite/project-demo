@@ -1,14 +1,25 @@
 // components/Loading.js
 
 import React from 'react';
-import styles from './Loading.module.css'; // Import CSS module for styles
+import styles from './Loading.module.css';
 
 const Loading = () => {
   return (
-    <div className={styles.loading}>
-      <div className={styles.spinner}></div>
-      <p>กรุณารอสักครู่...</p>
+ 
+    <div className={styles.loaderContainer}>
+    <div className={styles.terminalLoader}>
+      <div className={styles.terminalHeader}>
+        <div className={styles.terminalTitle}>Status</div>
+        <div className={styles.terminalControls}>
+          <div className={`${styles.control} ${styles.close}`}></div>
+          <div className={`${styles.control} ${styles.minimize}`}></div>
+          <div className={`${styles.control} ${styles.maximize}`}></div>
+        </div>
+      </div>
+      <div className={styles.text}>Loading...</div>
     </div>
+  </div>
+    
   );
 };
 

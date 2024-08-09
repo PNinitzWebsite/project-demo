@@ -14,12 +14,12 @@ const Profile = ({ user, email, roomNumber, users, host, totalScore }) => {
   };
 
   return (
-    <Layout>
+    <Layout pageTitle={`User Profile : ${user.name}`}>
       {users && users.includes(email) || host == email ? (
         <>
-          <div>
-            <button className='text-sm mt-6 mb-6' onClick={handleExit}>Exit Room</button>
-          </div>
+          <nav className='my-5'>
+             <button className='text-sm btn-gray' onClick={handleExit}>Go to room</button>      
+         </nav>
           {email === user.email ? (
             // ถ้าเป็น user ตัวเอง
             <>
@@ -33,13 +33,15 @@ const Profile = ({ user, email, roomNumber, users, host, totalScore }) => {
               <br />
             </>
           )}
-          <h1>User Profile</h1>
-          <p><strong>Room ID:</strong> {roomNumber}</p>
-          <p><strong>Profile Number:</strong> {id2}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Name:</strong> {user.name}</p>
-          <p><strong>Score:</strong> {totalScore}</p>
-          {/* Add more user details as needed */}
+          <main className='space-y-3'>
+            <h1 className='text-xl'>User Profile</h1>
+            <p className='text-lg'><strong>Room ID:</strong> {roomNumber}</p>
+            <p className='text-lg'><strong>Profile Number:</strong> {id2}</p>
+            <p className='text-lg'><strong>Email:</strong> {user.email}</p>
+            <p className='text-lg'><strong>Name:</strong> {user.name}</p>
+            <p className='text-lg'><strong>Score:</strong> {totalScore}</p>
+            {/* Add more user details as needed */}
+          </main>
         </>
       ) : (
         <>
